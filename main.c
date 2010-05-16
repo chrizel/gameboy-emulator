@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #if defined(__APPLE__)
 #include <GLUT/glut.h>
@@ -23,6 +24,8 @@ static GLubyte colors[4][3] = {
 
 static void set_pixel(int x, int y, int color)
 {
+    if (x >= GB_DISPLAY_WIDTH || y >= GB_DISPLAY_HEIGHT || color >= 3)
+        return;
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 0] = colors[color][0];
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 1] = colors[color][1];
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 2] = colors[color][2];
@@ -50,16 +53,44 @@ static void cleanup()
     gbFree(gb);
 }
 
+static int offset = 0x3000;
+
 static void draw()
 {
-    int x, y;
+    int x, y, spritey, spritex, i;
+    char byte1, byte2;
 
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
 
+    /*
     for (y = 0; y < GB_DISPLAY_HEIGHT; y++) {
         for (x = 0; x < GB_DISPLAY_WIDTH; x++) {
             set_pixel(x, y, 0);
+        }
+    }
+    */
+
+    memset(screen, 0, GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3);
+
+#define w 20
+#define h 18 
+    for (spritey = 0; spritey < h; spritey++) {
+        for (spritex = 0; spritex < w; spritex++) {
+            for (y = 0; y < 8; y++) {
+                i = offset + (spritey * w + spritex);
+                byte1 = gb->mem[0x0 + (i * 16) + (y * 2) + 0];
+                byte2 = gb->mem[0x0 + (i * 16) + (y * 2) + 1];
+
+                //printf("%02x %02x ", byte1, byte2);
+
+                for (x = 0; x < 8; x++) {
+                    i = ((byte1 & (1 << x)) >> (x))
+                      + ((byte2 & (1 << x)) >> (x));
+                    set_pixel((spritex * 8) + 7 - x, (spritey * 8) + y, i);
+                }
+            }
+            //printf("\n");
         }
     }
 
@@ -90,7 +121,12 @@ static void draw()
 
 static void idle()
 {
+    /*
+    usleep(100000);
+    offset += 32;
+    printf("%x\n", offset);
     glutPostRedisplay();
+    */
 }
 
 int main(int argc, char *argv[])
@@ -114,7 +150,7 @@ int main(int argc, char *argv[])
 
     glutReshapeFunc(resize);
     glutDisplayFunc(draw);
-    glutIdleFunc(idle);
+    //glutIdleFunc(idle);
 
     glutMainLoop();
     return 0;
