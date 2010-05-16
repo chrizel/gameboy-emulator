@@ -3,8 +3,9 @@
 #include <string.h>
 
 #include "gameboy.h"
+#include "cpu.h"
 
-GameBoy * gbInit(const char *file)
+GameBoy * gbGameBoyCreate(const char *file)
 {
     int size;
     GameBoy *gb;
@@ -19,18 +20,34 @@ GameBoy * gbInit(const char *file)
     fseek(fp, 0, SEEK_END);
     size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    printf("Rom size: %d bytes\n", size);
 
     gb = malloc(sizeof(GameBoy));
-    gb->mem = malloc(size);
+    gb->mem = malloc(0xFFFF);
     fread(gb->mem, 1, size, fp);
 
     fclose(fp);
 
+    gbCPUInit(gb);
+
     return gb;
 }
 
-void gbFree(GameBoy *gb)
+void gbGameBoyProcess(GameBoy *gb)
+{
+    gb->cpu.cycles = 0;
+    while (gb->cpu.cycles < 100) {
+        gbCPUStep(gb);
+
+        REG_LY(gb)++;
+        if (REG_LY(gb) > 153) {
+            REG_LY(gb) = 0;
+        } else if (REG_LY(gb) == 144) {
+            /* vblank interrupt */
+        }
+    }
+}
+
+void gbGameBoyFree(GameBoy *gb)
 {
     if (gb) {
         free(gb->mem);

@@ -10,6 +10,7 @@
 #endif
 
 #include "gameboy.h"
+#include "cpu.h"
 
 static GameBoy *gb = NULL;
 static GLubyte screen[GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3];
@@ -50,29 +51,27 @@ static void init()
 
 static void cleanup()
 {
-    gbFree(gb);
+    gbGameBoyFree(gb);
 }
 
+/*
 static int offset = 0x3000;
+*/
 
 static void draw()
 {
+    /*
     int x, y, spritey, spritex, i;
     char byte1, byte2;
+    */
 
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
 
-    /*
-    for (y = 0; y < GB_DISPLAY_HEIGHT; y++) {
-        for (x = 0; x < GB_DISPLAY_WIDTH; x++) {
-            set_pixel(x, y, 0);
-        }
-    }
-    */
-
     memset(screen, 0, GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3);
+    set_pixel(0, 0, 0);
 
+    /*
 #define w 20
 #define h 18 
     for (spritey = 0; spritey < h; spritey++) {
@@ -90,6 +89,7 @@ static void draw()
             }
         }
     }
+    */
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GB_DISPLAY_WIDTH, GB_DISPLAY_HEIGHT,
                  0, GL_RGB, GL_UNSIGNED_BYTE, screen);
@@ -118,10 +118,16 @@ static void draw()
 
 static void idle()
 {
+    while (1) {
+        gbGameBoyProcess(gb);
+    }
+    exit(1);
+    /*
     usleep(1000000);
     offset += 32;
     printf("%x\n", offset);
     glutPostRedisplay();
+    */
 }
 
 int main(int argc, char *argv[])
@@ -130,11 +136,13 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s rom\n", argv[0]);
         return 1;
     }
-    gb = gbInit(argv[1]);
+    gb = gbGameBoyCreate(argv[1]);
     if (!gb) {
         return 1;
     }
     atexit(cleanup);
+
+    idle(); // headless mode
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
@@ -145,8 +153,10 @@ int main(int argc, char *argv[])
 
     glutReshapeFunc(resize);
     glutDisplayFunc(draw);
+
     glutIdleFunc(idle);
 
     glutMainLoop();
+
     return 0;
 }
