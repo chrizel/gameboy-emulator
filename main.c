@@ -24,7 +24,7 @@ static GLubyte colors[4][3] = {
 
 static void set_pixel(int x, int y, int color)
 {
-    if (x >= GB_DISPLAY_WIDTH || y >= GB_DISPLAY_HEIGHT || color >= 3)
+    if (x >= GB_DISPLAY_WIDTH || y >= GB_DISPLAY_HEIGHT || color > 3)
         return;
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 0] = colors[color][0];
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 1] = colors[color][1];
@@ -82,15 +82,12 @@ static void draw()
                 byte1 = gb->mem[0x0 + (i * 16) + (y * 2) + 0];
                 byte2 = gb->mem[0x0 + (i * 16) + (y * 2) + 1];
 
-                //printf("%02x %02x ", byte1, byte2);
-
                 for (x = 0; x < 8; x++) {
                     i = ((byte1 & (1 << x)) >> (x))
-                      + ((byte2 & (1 << x)) >> (x));
+                      + ((byte2 & (1 << x)) >> (x-1));
                     set_pixel((spritex * 8) + 7 - x, (spritey * 8) + y, i);
                 }
             }
-            //printf("\n");
         }
     }
 
@@ -121,12 +118,10 @@ static void draw()
 
 static void idle()
 {
-    /*
-    usleep(100000);
+    usleep(1000000);
     offset += 32;
     printf("%x\n", offset);
     glutPostRedisplay();
-    */
 }
 
 int main(int argc, char *argv[])
@@ -150,7 +145,7 @@ int main(int argc, char *argv[])
 
     glutReshapeFunc(resize);
     glutDisplayFunc(draw);
-    //glutIdleFunc(idle);
+    glutIdleFunc(idle);
 
     glutMainLoop();
     return 0;
