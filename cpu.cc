@@ -5,234 +5,248 @@
 #include "cpu.h"
 #include "debugger.h"
 #include "gameboy.h"
+#include "memory.h"
 
 static word word_from_bytes(byte lo, byte hi)
 {
-    reg r;
+    Register r;
     r.b.lo = lo;
     r.b.hi = hi;
     return r.w;
 }
 
-static word read_word(GameBoy *gb)
+word CPU::readWord()
 {
-    reg r;
-    r.b.lo = MEM(gb, REG_PC(gb)++);
-    r.b.hi = MEM(gb, REG_PC(gb)++);
+    Register r;
+    r.b.lo = memory->get(pc++);
+    r.b.hi = memory->get(pc++);
     return r.w;
 }
 
 static word signed_addition(word w, byte b)
 {
-    reg r;
+    Register r;
     r.w = w;
     r.b.lo += b;
     return r.w;
 }
 
-void gbCPUInit(GameBoy *gb)
+CPU::CPU(Memory *memory)
+    : memory(memory),
+      ly(memory, 0xff44),
+      ime(1),
+      cycles(0),
+      debug(true),
+      pc(registerBank[0].w), pc_hi(registerBank[0].b.hi), pc_lo(registerBank[0].b.lo),
+      sp(registerBank[1].w),
+      af(registerBank[2].w), a(registerBank[2].b.hi), f(registerBank[2].b.lo),
+      bc(registerBank[3].w), b(registerBank[3].b.hi), c(registerBank[3].b.lo),
+      de(registerBank[4].w), d(registerBank[4].b.hi), e(registerBank[4].b.lo),
+      hl(registerBank[5].w), h(registerBank[5].b.hi), l(registerBank[5].b.lo)
+
 {
-    gb->debug = 1;
-    gb->cpu.cycles = 0;
-    gb->cpu.ime = 1;
+    pc = 0x100;
+    sp = 0xFFFE;
+    af = 0x01;
 
-    REG_PC(gb) = 0x100;
-    REG_SP(gb) = 0xFFFE;
+    b  = 0x00;
+    c  = 0x13;
+    de = 0x00D8;
+    hl = 0x014D;
 
-    REG_AF(gb) = 0x01;
-    REG_B(gb)  = 0x00;
-    REG_C(gb)  = 0x13;
-    REG_DE(gb) = 0x00D8;
-    REG_HL(gb) = 0x014D;
-
-    REG_LY(gb) = 0x00;
+    ly.set(0x00);
 }
 
-static void ch_DEC_B(GameBoy *gb)
+CPU::~CPU()
 {
-    REG_B(gb)--;
-    FLAG_Z_SET(gb, REG_B(gb) == 0);
-    FLAG_N_SET(gb, 1);
-    FLAG_H_SET(gb, 0); // TODO: half carry flag
 }
 
-static void ch_INC_C(GameBoy *gb)
+static void ch_DEC_B(CPU *cpu)
 {
-    REG_C(gb)++;
-    FLAG_Z_SET(gb, REG_C(gb) == 0);
-    FLAG_N_SET(gb, 0);
-    FLAG_H_SET(gb, 0); // TODO: half carry flag
+    cpu->b--;
+    cpu->flagZ(cpu->b == 0);
+    cpu->flagN(1);
+    cpu->flagH(0); // TODO: half carry flag
 }
 
-static void ch_DEC_BC(GameBoy *gb)
+static void ch_INC_C(CPU *cpu)
 {
-    REG_BC(gb)--;
+    cpu->c++;
+    cpu->flagZ(cpu->c == 0);
+    cpu->flagN(0);
+    cpu->flagH(0); // TODO: half carry flag
 }
 
-static void ch_DEC_C(GameBoy *gb)
+static void ch_DEC_BC(CPU *cpu)
 {
-    REG_C(gb)--;
-    FLAG_Z_SET(gb, REG_C(gb) == 0);
-    FLAG_N_SET(gb, 1);
-    FLAG_H_SET(gb, 0); // TODO: half carry flag
+    cpu->bc--;
 }
 
-static void ch_LD_B_d8(GameBoy *gb)
+static void ch_DEC_C(CPU *cpu)
 {
-    REG_B(gb) = MEM(gb, REG_PC(gb)++);
+    cpu->c--;
+    cpu->flagZ(cpu->c == 0);
+    cpu->flagN(1);
+    cpu->flagH(0); // TODO: half carry flag
 }
 
-static void ch_LD_A_d8(GameBoy *gb)
+static void ch_LD_B_d8(CPU *cpu)
 {
-    REG_A(gb) = MEM(gb, REG_PC(gb)++);
+    cpu->b = cpu->memory->get(cpu->pc++);
 }
 
-static void ch_LD_C_d8(GameBoy *gb)
+static void ch_LD_A_d8(CPU *cpu)
 {
-    REG_C(gb) = MEM(gb, REG_PC(gb)++);
+    cpu->a = cpu->memory->get(cpu->pc++);
 }
 
-static void ch_JR_NZ_r8(GameBoy *gb)
+static void ch_LD_C_d8(CPU *cpu)
 {
-    word address = MEM(gb, REG_PC(gb)++);
-    if (!FLAG_Z(gb)) {
-        REG_PC(gb) = signed_addition(REG_PC(gb), address);
-        gb->cpu.cycles += 4;
+    cpu->c = cpu->memory->get(cpu->pc++);
+}
+
+static void ch_JR_NZ_r8(CPU *cpu)
+{
+    word address = cpu->memory->get(cpu->pc++);
+    if (!cpu->flagZ()) {
+        cpu->pc = signed_addition(cpu->pc, address);
+        cpu->cycles += 4;
     }
-    gb->cpu.cycles += 8;
+    cpu->cycles += 8;
 }
 
-static void ch_LD_HL_d16(GameBoy *gb)
+static void ch_LD_HL_d16(CPU *cpu)
 {
-    REG_HL(gb) = read_word(gb);
+    cpu->hl = cpu->readWord();
 }
 
-static void ch_LD_BC_d16(GameBoy *gb)
+static void ch_LD_BC_d16(CPU *cpu)
 {
-    REG_BC(gb) = read_word(gb);
+    cpu->bc = cpu->readWord();
 }
 
-static void ch_LD_SP_d16(GameBoy *gb)
+static void ch_LD_SP_d16(CPU *cpu)
 {
-    REG_SP(gb) = read_word(gb);
+    cpu->sp = cpu->readWord();
 }
 
-static void ch_LD_aHLD_A(GameBoy *gb)
+static void ch_LD_aHLD_A(CPU *cpu)
 {
-    MEM(gb, REG_HL(gb)) = REG_A(gb);
-    REG_HL(gb)--;
+    cpu->memory->set(cpu->hl, cpu->a);
+    cpu->hl--;
 }
 
-static void ch_LD_A_aHLI(GameBoy *gb)
+static void ch_LD_A_aHLI(CPU *cpu)
 {
-    REG_A(gb) = MEM(gb, REG_HL(gb));
-    REG_HL(gb)++;
+    cpu->a = cpu->memory->get(cpu->hl);
+    cpu->hl++;
 }
 
-static void ch_XOR_A(GameBoy *gb)
+static void ch_XOR_A(CPU *cpu)
 {
-    REG_A(gb) ^= REG_A(gb);
-    FLAG_Z_SET(gb, REG_A(gb) == 0);
-    FLAG_N_SET(gb, 0);
-    FLAG_H_SET(gb, 0);
-    FLAG_C_SET(gb, 0);
+    cpu->a ^= cpu->a;
+    cpu->flagZ(cpu->a == 0);
+    cpu->flagN(0);
+    cpu->flagH(0);
+    cpu->flagC(0);
 }
 
-static void ch_JP_a16(GameBoy *gb)
+static void ch_JP_a16(CPU *cpu)
 {
-    REG_PC(gb) = read_word(gb);
+    cpu->pc = cpu->readWord();
 }
 
-static void ch_DI(GameBoy *gb)
+static void ch_DI(CPU *cpu)
 {
-    gb->cpu.ime = 0;
+    cpu->ime = 0;
 }
 
-static void ch_EI(GameBoy *gb)
+static void ch_EI(CPU *cpu)
 {
-    gb->cpu.ime = 1;
+    cpu->ime = 1;
 }
 
-static void ch_LDH_a8_A(GameBoy *gb)
+static void ch_LDH_a8_A(CPU *cpu)
 {
-    word address = word_from_bytes(MEM(gb, REG_PC(gb)++), 0xff);
-    MEM(gb, address) = REG_A(gb);
+    word address = word_from_bytes(cpu->memory->get(cpu->pc++), 0xff);
+    cpu->memory->set(address, cpu->a);
 }
 
-static void ch_LDH_A_a8(GameBoy *gb)
+static void ch_LDH_A_a8(CPU *cpu)
 {
-    word address = word_from_bytes(MEM(gb, REG_PC(gb)++), 0xff);
-    REG_A(gb) = MEM(gb, address);
+    word address = word_from_bytes(cpu->memory->get(cpu->pc++), 0xff);
+    cpu->a = cpu->memory->get(address);
 }
 
-static void ch_CP_d8(GameBoy *gb)
+static void ch_CP_d8(CPU *cpu)
 {
-    FLAG_Z_SET(gb, MEM(gb, REG_PC(gb)++) == REG_A(gb));
-    FLAG_N_SET(gb, 1);
-    FLAG_H_SET(gb, 0); // TODO: half carry flag
-    FLAG_C_SET(gb, 0); // TODO: carry flag
+    cpu->flagZ(cpu->memory->get(cpu->pc++) == cpu->a);
+    cpu->flagN(1);
+    cpu->flagH(0); // TODO: half carry flag
+    cpu->flagC(0); // TODO: carry flag
+
 }
 
-static void ch_LD_aHL_d8(GameBoy *gb)
+static void ch_LD_aHL_d8(CPU *cpu)
 {
-    MEM(gb, REG_HL(gb)) = REG_PC(gb)++;
+    cpu->memory->set(cpu->hl, cpu->pc++);
 }
 
-static void ch_LD_a16_A(GameBoy *gb)
+static void ch_LD_a16_A(CPU *cpu)
 {
-    MEM(gb, read_word(gb)) = REG_A(gb);
+    cpu->memory->set(cpu->readWord(), cpu->a);
 }
 
-static void ch_LD_aC_A(GameBoy *gb)
+static void ch_LD_aC_A(CPU *cpu)
 {
-    word address = word_from_bytes(REG_C(gb), 0xff);
-    MEM(gb, address) = REG_A(gb);
+    word address = word_from_bytes(cpu->c, 0xff);
+    cpu->memory->set(address, cpu->a);
 }
 
-static void ch_CALL_a16(GameBoy *gb)
+static void ch_CALL_a16(CPU *cpu)
 {
-    word address = read_word(gb);
-    REG_SP(gb)--;
-    MEM(gb, REG_SP(gb)) = gb->cpu.pc.b.hi;
-    REG_SP(gb)--;
-    MEM(gb, REG_SP(gb)) = gb->cpu.pc.b.lo;
-    REG_PC(gb) = address;
+    word address = cpu->readWord();
+    cpu->sp--;
+    cpu->memory->set(cpu->sp, cpu->pc_hi);
+    cpu->sp--;
+    cpu->memory->set(cpu->sp, cpu->pc_lo);
+    cpu->pc = address;
 }
 
-static void ch_RET(GameBoy *gb)
+static void ch_RET(CPU *cpu)
 {
-    gb->cpu.pc.b.lo = MEM(gb, REG_SP(gb)++);
-    gb->cpu.pc.b.hi = MEM(gb, REG_SP(gb)++);
+    cpu->pc_lo = cpu->memory->get(cpu->sp++);
+    cpu->pc_hi = cpu->memory->get(cpu->sp++);
 }
 
-static void ch_LD_A_B(GameBoy *gb)
+static void ch_LD_A_B(CPU *cpu)
 {
-    REG_A(gb) = REG_B(gb);
+    cpu->a = cpu->b;
 }
 
-static void ch_OR_C(GameBoy *gb)
+static void ch_OR_C(CPU *cpu)
 {
-    REG_A(gb) |= REG_C(gb);
-    FLAG_Z_SET(gb, REG_A(gb) == 0);
-    FLAG_N_SET(gb, 0);
-    FLAG_H_SET(gb, 0);
-    FLAG_C_SET(gb, 0);
+    cpu->a |= cpu->c;
+    cpu->flagZ(cpu->a == 0);
+    cpu->flagN(0);
+    cpu->flagH(0);
+    cpu->flagC(0);
 }
 
-static void ch_AND_d8(GameBoy *gb)
+static void ch_AND_d8(CPU *cpu)
 {
-    REG_A(gb) &= REG_PC(gb)++;
-    FLAG_Z_SET(gb, REG_A(gb) == 0);
-    FLAG_N_SET(gb, 0);
-    FLAG_H_SET(gb, 1);
-    FLAG_C_SET(gb, 0);
+    cpu->a &= cpu->pc++;
+    cpu->flagZ(cpu->a == 0);
+    cpu->flagN(0);
+    cpu->flagH(1);
+    cpu->flagC(0);
 }
 
-static void ch_CPL(GameBoy *gb)
+static void ch_CPL(CPU *cpu)
 {
-    REG_A(gb) = ~REG_A(gb);
-    FLAG_N_SET(gb, 1);
-    FLAG_H_SET(gb, 1);
+    cpu->a = ~cpu->a;
+    cpu->flagN(1);
+    cpu->flagH(1);
 }
 
 static Command instructionSet[] = {
@@ -269,11 +283,11 @@ static Command instructionSet[] = {
     {0x00, 0,  0, NULL,         NULL},
 };
 
-Command * gbCPUFindCommand(GameBoy *gb, word address)
+Command * gbCPUFindCommand(CPU *cpu, word address)
 {
     int i = 0;
     Command * cmd;
-    word code = MEM(gb, address);
+    word code = cpu->memory->get(address);
     while ((cmd = &instructionSet[i++])->length) {
         if (cmd->code == code) {
             return cmd;
@@ -283,23 +297,23 @@ Command * gbCPUFindCommand(GameBoy *gb, word address)
     return NULL;
 }
 
-void gbCPUStep(GameBoy *gb)
+void CPU::step()
 {
-    Command * cmd = gbCPUFindCommand(gb, REG_PC(gb));
+    Command * cmd = gbCPUFindCommand(this, pc);
     if (cmd) {
-        if (gb->debug) {
-            gbDebugPrintInstruction(gb, REG_PC(gb));
-            //gbDebugPrompt(gb);
+        if (debug) {
+            gbDebugPrintInstruction(this, pc);
+            //gbDebugPrompt(this);
         }
-        REG_PC(gb)++;
+        pc++;
         if (cmd->handler) {
-            cmd->handler(gb);
-            gb->cpu.cycles += cmd->cycles;
+            cmd->handler(this);
+            cycles += cmd->cycles;
         }
     } else {
         fprintf(stderr, "%04x *** Unknown machine code: %02x\n", 
-                REG_PC(gb), MEM(gb, REG_PC(gb)));
-        gbDebugPrompt(gb);
+                pc, memory->get(pc));
+        gbDebugPrompt(this);
         exit(1);
     }
 }

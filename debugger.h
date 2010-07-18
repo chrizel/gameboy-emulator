@@ -1,7 +1,9 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-void gbDebugPrintInstruction(GameBoy *gb, word address);
-void gbDebugPrompt(GameBoy *gb);
+class CPU;
+
+void gbDebugPrintInstruction(CPU *cpu, word address);
+void gbDebugPrompt(CPU *cpu);
 
 #endif

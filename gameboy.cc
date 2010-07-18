@@ -4,45 +4,30 @@
 
 #include "gameboy.h"
 #include "cpu.h"
+#include "memory.h"
 
 GameBoy::GameBoy(const char *file)
 {
-    int size;
-    FILE *fp;
-
-    fp = fopen(file, "r");
-    if (!fp) {
-        fprintf(stderr, "Cannot open file: %s\n", file);
-        exit(1);
-    }
-
-    fseek(fp, 0, SEEK_END);
-    size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    mem = (byte*)malloc(0xFFFF);
-    fread(mem, 1, size, fp);
-
-    fclose(fp);
-
-    gbCPUInit(this);
+    memory = new Memory(file);
+    cpu = new CPU(memory);
 }
 
 GameBoy::~GameBoy()
 {
-    free(mem);
+    delete cpu;
+    delete memory;
 }
 
 void GameBoy::process()
 {
-    cpu.cycles = 0;
-    while (cpu.cycles < 100) {
-        gbCPUStep(this);
+    cpu->cycles = 0;
+    while (cpu->cycles < 100) {
+        cpu->step();
 
-        REG_LY(this)++;
-        if (REG_LY(this) > 153) {
-            REG_LY(this) = 0;
-        } else if (REG_LY(this) == 144) {
+        cpu->ly.set(cpu->ly.get() + 1);
+        if (cpu->ly.get() > 153) {
+            cpu->ly.set(0);
+        } else if (cpu->ly.get() == 144) {
             /* vblank interrupt */
         }
     }
