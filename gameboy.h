@@ -14,7 +14,9 @@ typedef union {
     } b;
 } reg;
 
-typedef struct {
+class GameBoy 
+{
+public:
     struct {
         byte ime; /* interrupt master enable */
         reg pc;
@@ -27,7 +29,12 @@ typedef struct {
     } cpu;
     byte *mem;
     byte debug;
-} GameBoy;
+
+    GameBoy(const char *file);
+    virtual ~GameBoy();
+
+    void process();
+};
 
 #define MEM(gb, x) (gb->mem[x])
 
@@ -62,10 +69,6 @@ typedef struct {
     REG_F(gb) = ((v) ? (REG_F(gb) | (1 << 5)) : (REG_F(gb) & ~(1 << 5)))
 #define FLAG_C_SET(gb, v) \
     REG_F(gb) = ((v) ? (REG_F(gb) | (1 << 4)) : (REG_F(gb) & ~(1 << 4)))
-
-GameBoy * gbGameBoyCreate(const char *file);
-void gbGameBoyProcess(GameBoy *gb);
-void gbGameBoyFree(GameBoy *gb);
 
 #define GB_DISPLAY_WIDTH 160
 #define GB_DISPLAY_HEIGHT 144

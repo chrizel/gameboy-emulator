@@ -5,52 +5,45 @@
 #include "gameboy.h"
 #include "cpu.h"
 
-GameBoy * gbGameBoyCreate(const char *file)
+GameBoy::GameBoy(const char *file)
 {
     int size;
-    GameBoy *gb;
     FILE *fp;
 
     fp = fopen(file, "r");
     if (!fp) {
         fprintf(stderr, "Cannot open file: %s\n", file);
-        return NULL;
+        exit(1);
     }
 
     fseek(fp, 0, SEEK_END);
     size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    gb = (GameBoy*)malloc(sizeof(GameBoy));
-    gb->mem = (byte*)malloc(0xFFFF);
-    fread(gb->mem, 1, size, fp);
+    mem = (byte*)malloc(0xFFFF);
+    fread(mem, 1, size, fp);
 
     fclose(fp);
 
-    gbCPUInit(gb);
-
-    return gb;
+    gbCPUInit(this);
 }
 
-void gbGameBoyProcess(GameBoy *gb)
+GameBoy::~GameBoy()
 {
-    gb->cpu.cycles = 0;
-    while (gb->cpu.cycles < 100) {
-        gbCPUStep(gb);
+    free(mem);
+}
 
-        REG_LY(gb)++;
-        if (REG_LY(gb) > 153) {
-            REG_LY(gb) = 0;
-        } else if (REG_LY(gb) == 144) {
+void GameBoy::process()
+{
+    cpu.cycles = 0;
+    while (cpu.cycles < 100) {
+        gbCPUStep(this);
+
+        REG_LY(this)++;
+        if (REG_LY(this) > 153) {
+            REG_LY(this) = 0;
+        } else if (REG_LY(this) == 144) {
             /* vblank interrupt */
         }
-    }
-}
-
-void gbGameBoyFree(GameBoy *gb)
-{
-    if (gb) {
-        free(gb->mem);
-        free(gb);
     }
 }

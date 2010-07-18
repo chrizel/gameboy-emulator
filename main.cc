@@ -12,7 +12,7 @@
 #include "gameboy.h"
 #include "cpu.h"
 
-static GameBoy *gb = NULL;
+static GameBoy *gb = 0;
 static GLubyte screen[GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3];
 static int zoom = 2;
 
@@ -51,7 +51,7 @@ static void init()
 
 static void cleanup()
 {
-    gbGameBoyFree(gb);
+    delete gb;
 }
 
 /*
@@ -119,7 +119,7 @@ static void draw()
 static void idle()
 {
     while (1) {
-        gbGameBoyProcess(gb);
+        gb->process();
     }
     exit(1);
     /*
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s rom\n", argv[0]);
         return 1;
     }
-    gb = gbGameBoyCreate(argv[1]);
+    gb = new GameBoy(argv[1]);
     if (!gb) {
         return 1;
     }
