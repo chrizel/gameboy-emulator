@@ -27,6 +27,17 @@ union Register {
     } b;
 };
 
+class CPU;
+typedef void (*CommandHandler)(CPU *cpu);
+
+typedef struct {
+    byte code;
+    byte length;
+    byte cycles;
+    const char *mnemonic;
+    CommandHandler handler;
+} Command;
+
 class CPU
 {
 private:
@@ -62,18 +73,7 @@ public:
 
     void step();
     word readWord();
+    Command *findCommand(word address);
 };
-
-typedef void (*CommandHandler)(CPU *cpu);
-
-typedef struct {
-    byte code;
-    byte length;
-    byte cycles;
-    const char *mnemonic;
-    CommandHandler handler;
-} Command;
-
-Command * gbCPUFindCommand(CPU *cpu, word address);
 
 #endif

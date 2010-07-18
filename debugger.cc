@@ -7,7 +7,7 @@
 void gbDebugPrintInstruction(CPU *cpu, word address)
 {
     int i = 0;
-    Command * cmd = gbCPUFindCommand(cpu, address);
+    Command * cmd = cpu->findCommand(address);
     if (cmd) {
         printf("\t%04x\t", address);
         for (i = 0; i < 3; i++) {
@@ -37,30 +37,26 @@ void gbDebugPrompt(CPU *cpu)
         case 'q':
             exit(0);
         case 'r':
-            /*
-            printf("\tA: %02x\tF: %02x\tAF: %04x\n", REG_A(gb), REG_F(gb), REG_AF(gb));
-            printf("\tB: %02x\tC: %02x\tBC: %04x\n", REG_B(gb), REG_C(gb), REG_BC(gb));
-            printf("\tD: %02x\tE: %02x\tDE: %04x\n", REG_D(gb), REG_E(gb), REG_DE(gb));
-            printf("\tH: %02x\tL: %02x\tHL: %04x\n", REG_H(gb), REG_L(gb), REG_HL(gb));
-            printf("\tPC: %04x\tSP: %04x\n", REG_PC(gb), REG_SP(gb));
-            */
+            printf("\tA: %02x\tF: %02x\tAF: %04x\n", cpu->a, cpu->f, cpu->af);
+            printf("\tB: %02x\tC: %02x\tBC: %04x\n", cpu->b, cpu->c, cpu->bc);
+            printf("\tD: %02x\tE: %02x\tDE: %04x\n", cpu->d, cpu->e, cpu->de);
+            printf("\tH: %02x\tL: %02x\tHL: %04x\n", cpu->h, cpu->l, cpu->hl);
+            printf("\tPC: %04x\tSP: %04x\n", cpu->pc, cpu->sp);
             break;
         case 'i':
             gbDebugPrintInstruction(cpu, cpu->pc);
             break;
         case 'd':
-            /*
-            word w = REG_PC(gb);
+            word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
-                gbDebugPrintInstruction(gb, w);
-                Command *cmd = gbCPUFindCommand(gb, w);
+                gbDebugPrintInstruction(cpu, w);
+                Command *cmd = cpu->findCommand(w);
                 if (cmd) {
                     w += cmd->length;
                 } else {
                     break;
                 }
             }
-            */
             break;
         case 'n':
             done = 1;

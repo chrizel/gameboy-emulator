@@ -249,7 +249,7 @@ static void ch_CPL(CPU *cpu)
 }
 
 static Command instructionSet[] = {
-    {0x00, 1,  4, "NOP",        NULL},
+    {0x00, 1,  4, "NOP",        0},
     {0x01, 3, 12, "LD BC,d16",  ch_LD_BC_d16},
     {0x05, 1,  4, "DEC B",      ch_DEC_B},
     {0x06, 2,  8, "LD B,d8",    ch_LD_B_d8},
@@ -279,26 +279,26 @@ static Command instructionSet[] = {
     {0xf3, 1,  4, "DI",         ch_DI},
     {0xfb, 1,  4, "EI",         ch_EI},
     {0xfe, 2,  8, "CP d8",      ch_CP_d8},
-    {0x00, 0,  0, NULL,         NULL},
+    {0x00, 0,  0, 0,         0},
 };
 
-Command * gbCPUFindCommand(CPU *cpu, word address)
+Command * CPU::findCommand(word address)
 {
     int i = 0;
     Command * cmd;
-    word code = cpu->memory->get(address);
+    word code = memory->get(address);
     while ((cmd = &instructionSet[i++])->length) {
         if (cmd->code == code) {
             return cmd;
         }
     }
 
-    return NULL;
+    return 0;
 }
 
 void CPU::step()
 {
-    Command * cmd = gbCPUFindCommand(this, pc);
+    Command * cmd = findCommand(pc);
     if (cmd) {
         if (debug) {
             gbDebugPrintInstruction(this, pc);
