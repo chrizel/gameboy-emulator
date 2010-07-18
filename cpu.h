@@ -1,9 +1,12 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <vector>
+
 #include "gameboy.h"
 #include "memory.h"
 
+/*
 class MemoryRegister
 {
 private:
@@ -18,30 +21,33 @@ public:
     inline word get() const { return memory->get(address); };
     inline void set(word w) { memory->set(address, w); };
 };
-
-union Register {
-    word w;
-    struct {
-        byte lo;
-        byte hi;
-    } b;
-};
+*/
 
 class CPU;
-typedef void (*CommandHandler)(CPU *cpu);
 
-typedef struct {
+class Command
+{
+public:
     byte code;
     byte length;
     byte cycles;
     const char *mnemonic;
-    CommandHandler handler;
-} Command;
+    Command(byte code, byte length, byte cycles, const char *mnemonic) :
+        code(code),
+        length(length),
+        cycles(cycles),
+        mnemonic(mnemonic) {};
+    virtual ~Command() {};
+    virtual void run(CPU *cpu) = 0;
+};
+
+typedef std::vector<Command*> Commands;
 
 class CPU
 {
 private:
     Register registerBank[6];
+    Commands commands;
 
 public:
     Memory *memory;
@@ -72,7 +78,6 @@ public:
     virtual ~CPU();
 
     void step();
-    word readWord();
     Command *findCommand(word address);
 };
 

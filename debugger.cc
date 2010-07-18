@@ -12,7 +12,7 @@ void gbDebugPrintInstruction(CPU *cpu, word address)
         printf("\t%04x\t", address);
         for (i = 0; i < 3; i++) {
             if (i < cmd->length) {
-                printf("%02x ", cpu->memory->get(address+i));
+                printf("%02x ", cpu->memory->get<byte>(address+i));
             } else {
                 printf("   ");
             }
@@ -21,7 +21,7 @@ void gbDebugPrintInstruction(CPU *cpu, word address)
         return;
     }
 
-    printf("\t%04x\tUnknown instruction: %02x\n", address, cpu->memory->get(address));
+    printf("\t%04x\tUnknown instruction: %02x\n", address, cpu->memory->get<byte>(address));
 }
 
 void gbDebugPrompt(CPU *cpu)
@@ -46,7 +46,7 @@ void gbDebugPrompt(CPU *cpu)
         case 'i':
             gbDebugPrintInstruction(cpu, cpu->pc);
             break;
-        case 'd':
+        case 'd': {
             word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
                 gbDebugPrintInstruction(cpu, w);
@@ -58,6 +58,7 @@ void gbDebugPrompt(CPU *cpu)
                 }
             }
             break;
+        }
         case 'n':
             done = 1;
             break;

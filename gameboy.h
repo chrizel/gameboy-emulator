@@ -6,6 +6,16 @@
 typedef uint8_t byte;
 typedef uint16_t word;
 
+union Register {
+    word w;
+    struct {
+        byte lo;
+        byte hi;
+    } b;
+};
+
+word word_from_bytes(byte lo, byte hi);
+
 class Memory;
 class CPU;
 
