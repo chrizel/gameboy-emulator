@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iostream>
 
 #include "gameboy.h"
 #include "cpu.h"
@@ -24,10 +22,10 @@ void GameBoy::process()
     while (cpu->cycles < 100) {
         cpu->step();
 
-        cpu->ly.set(cpu->ly.get() + 1);
-        if (cpu->ly.get() > 153) {
-            cpu->ly.set(0);
-        } else if (cpu->ly.get() == 144) {
+        cpu->ly += 1;
+        if (cpu->ly > 153) {
+            cpu->ly = 0;
+        } else if (cpu->ly == 144) {
             /* vblank interrupt */
         }
     }

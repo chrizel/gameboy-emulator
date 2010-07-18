@@ -33,7 +33,6 @@ static word signed_addition(word w, byte b)
 
 CPU::CPU(Memory *memory)
     : memory(memory),
-      ly(memory, 0xff44),
       ime(1),
       cycles(0),
       debug(true),
@@ -42,8 +41,8 @@ CPU::CPU(Memory *memory)
       af(registerBank[2].w), a(registerBank[2].b.hi), f(registerBank[2].b.lo),
       bc(registerBank[3].w), b(registerBank[3].b.hi), c(registerBank[3].b.lo),
       de(registerBank[4].w), d(registerBank[4].b.hi), e(registerBank[4].b.lo),
-      hl(registerBank[5].w), h(registerBank[5].b.hi), l(registerBank[5].b.lo)
-
+      hl(registerBank[5].w), h(registerBank[5].b.hi), l(registerBank[5].b.lo),
+      ly(memory->getRef(0xff44))
 {
     pc = 0x100;
     sp = 0xFFFE;
@@ -54,7 +53,7 @@ CPU::CPU(Memory *memory)
     de = 0x00D8;
     hl = 0x014D;
 
-    ly.set(0x00);
+    ly = 0x00;
 }
 
 CPU::~CPU()

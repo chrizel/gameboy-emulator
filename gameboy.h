@@ -14,7 +14,6 @@ class GameBoy
 public:
     Memory *memory;
     CPU *cpu;
-    byte debug;
 
     GameBoy(const char *file);
     virtual ~GameBoy();

@@ -6,7 +6,7 @@
 class Memory
 {
 private:
-    char *rom;
+    byte *rom;
 
 public:
     Memory(const char *file);
@@ -14,6 +14,8 @@ public:
 
     inline void set(word address, byte b) { rom[address] = b; };
     inline byte get(word address) const { return rom[address]; };
+
+    inline byte & getRef(word address) { return rom[address]; };
 };
 
 #endif

@@ -17,8 +17,8 @@ Memory::Memory(const char *file)
     int size = is.tellg();
     is.seekg(0, std::ios::beg);
 
-    rom = new char[size];
-    is.read(rom, size);
+    rom = new byte[size];
+    is.read((char*)rom, size);
     is.close();
 }
 

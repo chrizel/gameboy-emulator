@@ -4,28 +4,6 @@
 #include "gameboy.h"
 #include "memory.h"
 
-/*
-class Register
-{
-private:
-     value;
-public:
-    Register() { value.w = 0; };
-    Register(word w) { value.w = w; };
-    Register(byte lo, byte hi) { value.b.lo = lo; value.b.hi = hi; };
-
-    inline word get() const { return value.w; };
-    inline byte lo() const { return value.b.lo; };
-    inline byte hi() const { return value.b.hi; };
-
-    inline void set(word w) { value.w = w; };
-    inline void lo(byte b) { value.b.lo = b; };
-    inline void hi(byte b) { value.b.hi = b; };
-
-    inline word inc() { return value.w++; };
-};
-*/
-
 class MemoryRegister
 {
 private:
@@ -57,7 +35,6 @@ private:
 public:
     Memory *memory;
 
-    MemoryRegister ly;
     byte ime; /* interrupt master enable */
     int cycles;
     bool debug;
@@ -68,6 +45,7 @@ public:
     word &bc; byte &b; byte &c;
     word &de; byte &d; byte &e;
     word &hl; byte &h; byte &l;
+    byte &ly;
 
     inline const byte flagZ() { return f & (1 << 7); };
     inline const byte flagN() { return f & (1 << 6); };
