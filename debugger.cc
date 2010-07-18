@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "cpu.h"
-#include "debug.h"
+#include "debugger.h"
 
 void gbDebugPrintInstruction(GameBoy *gb, word address)
 {

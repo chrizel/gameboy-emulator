@@ -1,7 +1,7 @@
-SOURCES=main.c gameboy.c cpu.c debug.c
-HEADERS=gameboy.h cpu.h debug.c
+SOURCES=main.cc gameboy.cc cpu.cc debugger.cc
+HEADERS=gameboy.h cpu.h debugger.h
 gb: $(SOURCES) $(HEADERS)
-	gcc -Wall -framework GLUT -framework OpenGL -framework Cocoa $(SOURCES) -o gb
+	g++ -Wall -framework GLUT -framework OpenGL -framework Cocoa $(SOURCES) -o gb
 .PHONY: debug
 
 clean:

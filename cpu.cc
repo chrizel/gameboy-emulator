@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include "cpu.h"
-#include "debug.h"
+#include "debugger.h"
 #include "gameboy.h"
 
 static word word_from_bytes(byte lo, byte hi)

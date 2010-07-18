@@ -21,8 +21,8 @@ GameBoy * gbGameBoyCreate(const char *file)
     size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    gb = malloc(sizeof(GameBoy));
-    gb->mem = malloc(0xFFFF);
+    gb = (GameBoy*)malloc(sizeof(GameBoy));
+    gb->mem = (byte*)malloc(0xFFFF);
     fread(gb->mem, 1, size, fp);
 
     fclose(fp);

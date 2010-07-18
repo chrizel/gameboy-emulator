@@ -9,7 +9,7 @@ typedef struct {
     byte code;
     byte length;
     byte cycles;
-    char *mnemonic;
+    const char *mnemonic;
     CommandHandler handler;
 } Command;
 
