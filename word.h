@@ -26,6 +26,9 @@ public:
     inline byte hi() const { return d.b.hi; };
     inline uint16_t value() const { return d.w; };
 
+    inline void setlo(byte v) { d.b.lo = v; };
+    inline void sethi(byte v) { d.b.hi = v; };
+
     operator uint16_t() const {
         return d.w;
     };
@@ -39,13 +42,8 @@ public:
         return *this;
     };
 
-    word operator+=(const byte &b) {
-        d.b.lo += b;
-        return *this;
-    };
-
-    word operator+(const byte &b) {
-        return word(d.b.lo + b, d.b.hi);
+    void addSignedByte(const byte &b) {
+        d.w = d.w + (int8_t)b;
     };
 
     word operator++(int) {

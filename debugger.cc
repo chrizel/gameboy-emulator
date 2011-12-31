@@ -68,7 +68,7 @@ void Debugger::showMemory(CPU *cpu, word address)
 
 void Debugger::printInstruction(CPU *cpu, word address)
 {
-    byte i = 0;
+    word i = 0;
     Command * cmd = cpu->findCommand(address);
     if (cmd) {
         printf("\t%04x\t", address.value());

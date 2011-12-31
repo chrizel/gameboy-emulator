@@ -65,4 +65,11 @@ public:
     Command *findCommand(word address);
 };
 
+struct Condition { 
+    virtual ~Condition() {};
+    virtual bool operator()(CPU *cpu) = 0; 
+};
+struct NZ_Condition : Condition { virtual bool operator()(CPU *cpu) { return !cpu->flagZ(); }; };
+struct NC_Condition : Condition { virtual bool operator()(CPU *cpu) { return !cpu->flagC(); }; };
+
 #endif
