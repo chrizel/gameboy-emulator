@@ -112,6 +112,22 @@ public:
     }; 
 };
 
+class RLCA_Command : public Command {
+public:
+    RLCA_Command(byte code, byte length, byte cycles, const char *mnemonic)
+        : Command(code, length, cycles, mnemonic) {};
+    void run(CPU *cpu) {
+        byte bit7 = cpu->a & (1 << 7);
+        cpu->a = cpu->a << 1;
+        cpu->a = bit7 ? (cpu->a | 1) : (cpu->a & ~1);
+
+        cpu->flagZ(0);
+        cpu->flagH(0);
+        cpu->flagN(0);
+        cpu->flagC(bit7);
+    };
+};
+
 class OR_Command : public Command {
 private:
     Reference<byte> *ref;
@@ -345,6 +361,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new CPL_Command( 0x2f, 1, 4, "CPL"));
 
     commands.push_back(new AND_Command( 0xe6, 2, 8, "AND d8", new MemoryReference<byte, word>(this, pc)));
+
+    commands.push_back(new RLCA_Command( 0x07, 1, 4, "RLCA"));
+
 }
 
 CPU::~CPU()
