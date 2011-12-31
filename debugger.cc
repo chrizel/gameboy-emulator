@@ -49,6 +49,23 @@ void Debugger::handleInstruction(CPU *cpu, word address)
     }
 }
 
+void Debugger::showMemory(CPU *cpu, word address)
+{
+    word start = address.value() - address.value() % 10;
+    for (word i = start; i < start+word(10*16); i++) {
+        if (i.value() % 10 == 0) {
+            printf("\n%04x", i.value());
+        }
+
+        if (i == address) {
+            printf(" \x1b[31m%02x\x1b[0m", cpu->memory->get<byte>(i));
+        } else {
+            printf(" %02x", cpu->memory->get<byte>(i));
+        }
+    }
+    printf("\n");
+}
+
 void Debugger::printInstruction(CPU *cpu, word address)
 {
     byte i = 0;
@@ -125,12 +142,19 @@ void Debugger::prompt(CPU *cpu)
             verboseCPU = !verboseCPU;
             printf("verbose cpu = %d\n", verboseCPU);
             break;
+        case 'm': {
+            word w;
+            sscanf(buf, "m %04x", &w.d.w);
+            showMemory(cpu, w);
+            break;
+        }
         case 'h':
             puts("b - toggle breakpoint");
             puts("c - continue");
             puts("i - print current instruction");
             puts("l - list breakpoints");
             puts("n - next");
+            puts("m - show memory at address");
             puts("p - print next 16 instructions");
             puts("q - quit");
             puts("r - print registers");

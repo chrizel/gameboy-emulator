@@ -22,6 +22,7 @@ public:
     void prompt(CPU *cpu);
     void toggleBreakpoint(word address);
     void listBreakpoints();
+    void showMemory(CPU *cpu, word address);
 };
 
 #endif
