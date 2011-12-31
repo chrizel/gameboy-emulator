@@ -15,23 +15,18 @@ public:
     template <class T> inline void set(word address, T b) {};
     template <class T> inline T get(word address) const {};
 
-    inline byte & getRef(word address) { return rom[address]; };
+    inline byte & getRef(word address) { return rom[address.value()]; };
 };
 
-template <> inline void Memory::set(word address, byte b) { rom[address] = b; };
-template <> inline byte Memory::get(word address) const { return rom[address]; };
+template <> inline void Memory::set(word address, byte b) { rom[address.value()] = b; };
+template <> inline byte Memory::get(word address) const { return rom[address.value()]; };
 
 template <> inline void Memory::set(word address, word w) {
-    Register r;
-    r.w = w;
-    rom[address] = r.b.lo;
-    rom[address+1] = r.b.hi;
+    rom[address.value()] = w.lo();
+    rom[address.value()+1] = w.hi();
 };
 template <> inline word Memory::get(word address) const {
-    Register result;
-    result.b.lo = rom[address];
-    result.b.hi = rom[address+1];
-    return result.w;
+    return word(rom[address.value()], rom[address.value()+1]);
 };
 
 #endif

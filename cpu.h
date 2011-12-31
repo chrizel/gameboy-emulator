@@ -46,7 +46,7 @@ typedef std::vector<Command*> Commands;
 class CPU
 {
 private:
-    Register registerBank[6];
+    word registerBank[6];
     Commands commands;
 
 public:

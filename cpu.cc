@@ -7,15 +7,6 @@
 #include "gameboy.h"
 #include "memory.h"
 
-static word signed_addition(word w, byte b)
-{
-    Register r;
-    r.w = w;
-    r.b.lo += b;
-    return r.w;
-}
-
-
 /*
 static void ch_DEC_B(CPU *cpu)
 {
@@ -243,7 +234,7 @@ public:
             cpu->pc++;
         } else {
             byte v = cpu->memory->get<byte>(cpu->pc++);
-            cpu->pc = signed_addition(cpu->pc, v);
+            cpu->pc = cpu->pc + v;
             cpu->cycles += 4;
         }
     };
@@ -312,12 +303,12 @@ CPU::CPU(Memory *memory)
       ime(1),
       cycles(0),
       debug(true),
-      pc(registerBank[0].w), pc_hi(registerBank[0].b.hi), pc_lo(registerBank[0].b.lo),
-      sp(registerBank[1].w),
-      af(registerBank[2].w), a(registerBank[2].b.hi), f(registerBank[2].b.lo),
-      bc(registerBank[3].w), b(registerBank[3].b.hi), c(registerBank[3].b.lo),
-      de(registerBank[4].w), d(registerBank[4].b.hi), e(registerBank[4].b.lo),
-      hl(registerBank[5].w), h(registerBank[5].b.hi), l(registerBank[5].b.lo),
+      pc(registerBank[0]), pc_hi(registerBank[0].hi()), pc_lo(registerBank[0].lo()),
+      sp(registerBank[1]),
+      af(registerBank[2]), a(registerBank[2].hi()), f(registerBank[2].lo()),
+      bc(registerBank[3]), b(registerBank[3].hi()), c(registerBank[3].lo()),
+      de(registerBank[4]), d(registerBank[4].hi()), e(registerBank[4].lo()),
+      hl(registerBank[5]), h(registerBank[5].hi()), l(registerBank[5].lo()),
       ly(memory->getRef(0xff44))
 {
     pc = 0x100;
@@ -396,7 +387,7 @@ CPU::~CPU()
 
 Command * CPU::findCommand(word address)
 {
-    word code = memory->get<byte>(address);
+    byte code = memory->get<byte>(address);
     for (Commands::iterator i = commands.begin(); i != commands.end(); ++i)
         if ((*i)->code == code)
             return *i;
@@ -416,7 +407,7 @@ void CPU::step()
         cycles += cmd->cycles;
     } else {
         fprintf(stderr, "%04x *** Unknown machine code: %02x\n", 
-                pc, memory->get<byte>(pc));
+                pc.value(), memory->get<byte>(pc));
         gbDebugPrompt(this);
         exit(1);
     }

@@ -4,14 +4,6 @@
 #include "cpu.h"
 #include "memory.h"
 
-word word_from_bytes(byte lo, byte hi)
-{
-    Register r;
-    r.b.lo = lo;
-    r.b.hi = hi;
-    return r.w;
-}
-
 GameBoy::GameBoy(const char *file)
 {
     memory = new Memory(file);
