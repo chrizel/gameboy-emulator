@@ -3,15 +3,18 @@
 #include "gameboy.h"
 #include "cpu.h"
 #include "memory.h"
+#include "debugger.h"
 
 GameBoy::GameBoy(const char *file)
 {
     memory = new Memory(file);
-    cpu = new CPU(memory);
+    debugger = new Debugger();
+    cpu = new CPU(memory, debugger);
 }
 
 GameBoy::~GameBoy()
 {
+    delete debugger;
     delete cpu;
     delete memory;
 }

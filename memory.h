@@ -1,7 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "gameboy.h"
+#include "word.h"
 
 class Memory
 {

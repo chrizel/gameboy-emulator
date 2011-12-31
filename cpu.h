@@ -3,10 +3,11 @@
 
 #include <vector>
 
-#include "gameboy.h"
+#include "word.h"
 #include "memory.h"
 
 class CPU;
+class Debugger;
 
 class Command
 {
@@ -34,10 +35,10 @@ private:
 
 public:
     Memory *memory;
+    Debugger *debugger;
 
     byte ime; /* interrupt master enable */
     int cycles;
-    bool debug;
 
     word &pc; byte &pc_hi; byte &pc_lo;
     word &sp;
@@ -57,7 +58,7 @@ public:
     inline void flagH(byte v) { f = v ? (f | (1 << 5)) : (f & ~(1 << 5)); };
     inline void flagC(byte v) { f = v ? (f | (1 << 4)) : (f & ~(1 << 4)); };
 
-    CPU(Memory *memory);
+    CPU(Memory *memory, Debugger *debugger);
     virtual ~CPU();
 
     void step();

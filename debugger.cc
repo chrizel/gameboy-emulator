@@ -1,10 +1,55 @@
+#include <algorithm>
+
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "word.h"
 #include "cpu.h"
 #include "debugger.h"
 
-void gbDebugPrintInstruction(CPU *cpu, word address)
+Debugger::Debugger() : verboseCPU(false), stepMode(true)
+{
+}
+
+void Debugger::toggleBreakpoint(word address)
+{
+    Breakpoints::iterator it = std::find(breakpoints.begin(), breakpoints.end(), address);
+    if(it == breakpoints.end()) {
+        printf("Set breakpoint %04x\n", address.value());
+        breakpoints.push_back(address);
+    } else {
+        printf("Remove breakpoint %04x\n", address.value());
+        breakpoints.erase(it);
+    }
+}
+
+void Debugger::listBreakpoints()
+{
+    if (breakpoints.empty()) {
+        printf("No breakpoints set\n");
+    } else {
+        printf("List breakpoints:\n");
+        for (Breakpoints::iterator it = breakpoints.begin(); it != breakpoints.end(); ++it) {
+            printf("\t%04x\n", (*it).value());
+        }
+    }
+}
+
+void Debugger::handleInstruction(CPU *cpu, word address)
+{
+    if (stepMode) {
+        printInstruction(cpu, address);
+        prompt(cpu);
+    } else if(std::find(breakpoints.begin(), breakpoints.end(), address) != breakpoints.end()) {
+        printf("Breakpoint at\n");
+        printInstruction(cpu, address);
+        prompt(cpu);
+    } else if (verboseCPU) {
+        printInstruction(cpu, address);
+    }
+}
+
+void Debugger::printInstruction(CPU *cpu, word address)
 {
     byte i = 0;
     Command * cmd = cpu->findCommand(address);
@@ -24,9 +69,9 @@ void gbDebugPrintInstruction(CPU *cpu, word address)
     printf("\t%04x\tUnknown instruction: %02x\n", address.value(), cpu->memory->get<byte>(address));
 }
 
-void gbDebugPrompt(CPU *cpu)
+void Debugger::prompt(CPU *cpu)
 {
-    int done = 0;
+    bool done = false;
     char buf[64];
 
     while (!done) {
@@ -44,12 +89,21 @@ void gbDebugPrompt(CPU *cpu)
             printf("\tPC: %04x\tSP: %04x\n", cpu->pc.value(), cpu->sp.value());
             break;
         case 'i':
-            gbDebugPrintInstruction(cpu, cpu->pc);
+            printInstruction(cpu, cpu->pc);
             break;
-        case 'd': {
+        case 'b': {
+            word w;
+            sscanf(buf, "b %04x", &w.d.w);
+            toggleBreakpoint(w);
+            break;
+        }
+        case 'l':
+            listBreakpoints();
+            break;
+        case 'p': {
             word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
-                gbDebugPrintInstruction(cpu, w);
+                printInstruction(cpu, w);
                 Command *cmd = cpu->findCommand(w);
                 if (cmd) {
                     w += cmd->length;
@@ -60,7 +114,27 @@ void gbDebugPrompt(CPU *cpu)
             break;
         }
         case 'n':
-            done = 1;
+            stepMode = true;
+            done = true;
+            break;
+        case 'c':
+            stepMode = false;
+            done = true;
+            break;
+        case 'v':
+            verboseCPU = !verboseCPU;
+            printf("verbose cpu = %d\n", verboseCPU);
+            break;
+        case 'h':
+            puts("b - toggle breakpoint");
+            puts("c - continue");
+            puts("i - print current instruction");
+            puts("l - list breakpoints");
+            puts("n - next");
+            puts("p - print next 16 instructions");
+            puts("q - quit");
+            puts("r - print registers");
+            puts("v - toggle verbose cpu");
             break;
         }
     }

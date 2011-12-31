@@ -4,7 +4,7 @@
 
 #include "cpu.h"
 #include "debugger.h"
-#include "gameboy.h"
+#include "word.h"
 #include "memory.h"
 
 template <class T>
@@ -169,7 +169,7 @@ public:
     void run(CPU *cpu) {
         ref0->set(ref1->get());
         cpu->pc += length-1;
-    }; 
+    };
 };
 
 template <class T>
@@ -246,11 +246,11 @@ public:
 };
 
 
-CPU::CPU(Memory *memory)
+CPU::CPU(Memory *memory, Debugger *debugger)
     : memory(memory),
+      debugger(debugger),
       ime(1),
       cycles(0),
-      debug(true),
       pc(registerBank[0]), pc_hi(registerBank[0].hi()), pc_lo(registerBank[0].lo()),
       sp(registerBank[1]),
       af(registerBank[2]), a(registerBank[2].hi()), f(registerBank[2].lo()),
@@ -366,17 +366,13 @@ void CPU::step()
 {
     Command * cmd = findCommand(pc);
     if (cmd) {
-        if (debug) {
-            gbDebugPrintInstruction(this, pc);
-            //gbDebugPrompt(this);
-        }
+        debugger->handleInstruction(this, pc);
         pc++;
         cmd->run(this);
         cycles += cmd->cycles;
     } else {
         fprintf(stderr, "%04x *** Unknown machine code: %02x\n", 
                 pc.value(), memory->get<byte>(pc));
-        gbDebugPrompt(this);
-        exit(1);
+        debugger->prompt(this);
     }
 }
