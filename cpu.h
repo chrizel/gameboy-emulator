@@ -6,23 +6,6 @@
 #include "gameboy.h"
 #include "memory.h"
 
-/*
-class MemoryRegister
-{
-private:
-    Memory *memory;
-    word address;
-
-public:
-    MemoryRegister(Memory *memory, word address)
-        : memory(memory), 
-          address(address) {};
-
-    inline word get() const { return memory->get(address); };
-    inline void set(word w) { memory->set(address, w); };
-};
-*/
-
 class CPU;
 
 class Command
