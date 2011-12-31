@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 typedef uint8_t byte;
-//typedef uint16_t word;
 
 struct word {
 private:
@@ -53,9 +52,11 @@ public:
     word operator++(int) {
         return word(d.w++);
     };
-};
 
-word word_from_bytes(byte lo, byte hi);
+    word operator--(int) {
+        return word(d.w--);
+    };
+};
 
 class Memory;
 class CPU;

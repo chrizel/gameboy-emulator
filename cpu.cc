@@ -131,12 +131,6 @@ static void ch_CALL_a16(CPU *cpu)
     cpu->pc = address;
 }
 
-static void ch_RET(CPU *cpu)
-{
-    cpu->pc_lo = cpu->memory->get(cpu->sp++);
-    cpu->pc_hi = cpu->memory->get(cpu->sp++);
-}
-
 static void ch_LD_A_B(CPU *cpu)
 {
     cpu->a = cpu->b;
@@ -188,15 +182,15 @@ public:
     virtual void set(T v) { r = v; };
 };
 
-template <class T>
+template <class T, class R>
 class MemoryReference : public Reference<T>
 {
 private:
     CPU *cpu;
-    word &r;
-    word add;
+    R &r;
+    R add;
 public:
-    MemoryReference(CPU *cpu, word &r, word add=0) : cpu(cpu), r(r), add(add) {};
+    MemoryReference(CPU *cpu, R &r, R add=0) : cpu(cpu), r(r), add(add) {};
     virtual T get() {
         T v = cpu->memory->get<T>(r);
         r += add;
@@ -205,6 +199,22 @@ public:
     virtual void set(T v) {
         cpu->memory->set<T>(r, v);
         r += add;
+    };
+};
+
+template <class T>
+class Memory8Reference : public Reference<T>
+{
+private:
+    CPU *cpu;
+    word &r;
+public:
+    Memory8Reference(CPU *cpu, word &r): cpu(cpu), r(r) {};
+    virtual T get() {
+        return cpu->memory->get<T>( word(cpu->memory->get<byte>(r), 0xff));
+    };
+    virtual void set(T v) {
+        cpu->memory->set<T>(word(cpu->memory->get<byte>(r), 0xff), v);
     };
 };
 
@@ -253,7 +263,53 @@ public:
         cpu->flagN(0);
         cpu->flagH(0);
         cpu->flagC(0);
+        cpu->pc += length-1;
     }; 
+};
+
+class OR_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    OR_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~OR_Command() { delete ref; };
+    void run(CPU *cpu) {
+        cpu->a |= ref->get();
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagN(0);
+        cpu->flagH(0);
+        cpu->flagC(0);
+        cpu->pc += length-1;
+    };
+};
+
+class AND_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    AND_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~AND_Command() { delete ref; };
+    void run(CPU *cpu) {
+        cpu->a &= ref->get();
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagN(0);
+        cpu->flagH(1);
+        cpu->flagC(0);
+        cpu->pc += length-1;
+    };
+};
+
+class CPL_Command : public Command {
+public:
+    CPL_Command(byte code, byte length, byte cycles, const char *mnemonic)
+        : Command(code, length, cycles, mnemonic) {};
+    void run(CPU *cpu) {
+        cpu->a = ~cpu->a;
+        cpu->flagN(1);
+        cpu->flagH(1);
+    };
 };
 
 template <class T>
@@ -271,19 +327,65 @@ public:
     }; 
 };
 
-class DEC_Command : public Command {
+template <class T>
+class INC_Command : public Command {
 private:
-    Reference<byte> *ref;
+    Reference<T> *ref;
+    T value;
 public:
-    DEC_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
-        : Command(code, length, cycles, mnemonic), ref(ref) {};
-    virtual ~DEC_Command() { delete ref; };
+    INC_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<T> *ref, T value)
+        : Command(code, length, cycles, mnemonic), ref(ref), value(value) {};
+    virtual ~INC_Command() { delete ref; };
     void run(CPU *cpu) {
-        byte v = ref->get()-1;
+        T v = ref->get() + value;
         ref->set(v);
         cpu->flagZ(v == 0);
         cpu->flagN(1);
         cpu->flagH(0); // TOOD: half carry flag
+    }
+};
+
+class CP_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    CP_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~CP_Command() { delete ref; };
+    void run(CPU *cpu) {
+        cpu->flagZ(ref->get() == cpu->a);
+        cpu->flagN(1);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(0); // TODO: carry flag
+        cpu->pc += length-1;
+    }
+};
+
+class CALL_Command : public Command {
+private:
+    Reference<word> *ref;
+public:
+    CALL_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<word> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~CALL_Command() { delete ref; };
+    void run(CPU *cpu) {
+        word address = ref->get();
+        cpu->pc += length-1;
+        cpu->sp--;
+        cpu->memory->set(cpu->sp, cpu->pc_hi);
+        cpu->sp--;
+        cpu->memory->set(cpu->sp, cpu->pc_lo);
+        cpu->pc = address;
+    }
+};
+
+class RET_Command : public Command {
+public:
+    RET_Command(byte code, byte length, byte cycles, const char *mnemonic)
+        : Command(code, length, cycles, mnemonic) {};
+    void run(CPU *cpu) {
+        cpu->pc_lo = cpu->memory->get<byte>(cpu->sp++);
+        cpu->pc_hi = cpu->memory->get<byte>(cpu->sp++);
     }
 };
 
@@ -297,6 +399,7 @@ public:
         cpu->ime = value;
     }
 };
+
 
 CPU::CPU(Memory *memory)
     : memory(memory),
@@ -328,53 +431,79 @@ CPU::CPU(Memory *memory)
                                                         new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<word>( 0x21, 3,   12, "LD HL,d16",
                                                         new RegisterReference<word>(hl),
-                                                        new MemoryReference<word>(this, pc)));
+                                                        new MemoryReference<word, word>(this, pc)));
 
     commands.push_back(new LD_Command<byte>( 0x0e, 2,    8, "LD C,d8",
                                                         new RegisterReference<byte>(c),
-                                                        new MemoryReference<byte>(this, pc)));
+                                                        new MemoryReference<byte, word>(this, pc)));
     commands.push_back(new LD_Command<byte>( 0x06, 2,    8, "LD B,d8",
                                                         new RegisterReference<byte>(b),
-                                                        new MemoryReference<byte>(this, pc)));
+                                                        new MemoryReference<byte, word>(this, pc)));
 
     commands.push_back(new LD_Command<byte>( 0x32, 1,    8, "LD (HL-),A",
-                                                        new MemoryReference<byte>(this, hl, -1),
+                                                        new MemoryReference<byte, word>(this, hl, -1),
                                                         new RegisterReference<byte>(a)));
 
-    commands.push_back(new DEC_Command( 0x05, 1, 4, "DEC B",
-                                                        new RegisterReference<byte>(b)));
+    commands.push_back(new INC_Command<byte>( 0x05, 1, 4, "DEC B", new RegisterReference<byte>(b), -1));
 
     commands.push_back(new JR_NZ_r8_Command( 0x20, 2, 0, "JR NZ,r8"));
 
-    commands.push_back(new DEC_Command( 0x0d, 1, 4, "DEC C",
-                                                        new RegisterReference<byte>(c)));
+    commands.push_back(new INC_Command<byte>( 0x0d, 1, 4, "DEC C", new RegisterReference<byte>(c), -1));
 
     commands.push_back(new LD_Command<byte>( 0x3e, 2, 8, "LD A,d8",
                                                         new RegisterReference<byte>(a),
-                                                        new MemoryReference<byte>(this, pc)));
+                                                        new MemoryReference<byte, word>(this, pc)));
 
     commands.push_back(new SET_IME_Command( 0xf3, 1, 4, "DI", 0));
     commands.push_back(new SET_IME_Command( 0xfb, 1, 4, "EI", 1));
+
+    commands.push_back(new LD_Command<byte>( 0xe0, 2, 12, "LDH (a8),A",
+                                                        new Memory8Reference<byte>(this, pc),
+                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0xf0, 2, 12, "LDH A,(a8)",
+                                                        new RegisterReference<byte>(a),
+                                                        new Memory8Reference<byte>(this, pc)));
+    commands.push_back(new CP_Command( 0xfe, 2, 8, "CP d8", new MemoryReference<byte, word>(this, pc)));
+
+    commands.push_back(new LD_Command<byte>( 0x36, 2, 12, "LD (HL),d8",
+                                                        new MemoryReference<byte, word>(this, hl),
+                                                        new MemoryReference<byte, word>(this, pc)));
+    commands.push_back(new LD_Command<byte>( 0xea, 3, 16, "LD (a16),A",
+                                                        new MemoryReference<byte, word>(this, pc),
+                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<word>( 0x31, 3, 12, "LD SP,d16",
+                                                        new RegisterReference<word>(sp),
+                                                        new MemoryReference<word, word>(this, pc)));
+    commands.push_back(new LD_Command<byte>( 0x2a, 1, 8, "LD A,(HL+)",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte, word>(this, hl, 1)));
+    commands.push_back(new LD_Command<byte>( 0xe2, 1, 8, "LD (C),A",
+                                                        new MemoryReference<byte, byte>(this, c),
+                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new INC_Command<byte>( 0x0c, 1, 4, "INC C", new RegisterReference<byte>(c), 1));
+
+    commands.push_back(new CALL_Command( 0xcd, 3, 24, "CALL a16", new MemoryReference<word, word>(this, pc)));
+
+    commands.push_back(new LD_Command<word>( 0x01, 3, 12, "LD BC,d16",
+                                                        new RegisterReference<word>(bc),
+                                                        new MemoryReference<word, word>(this, pc)));
+    commands.push_back(new INC_Command<word>( 0x0b, 1, 8, "DEC BC", new RegisterReference<word>(bc), -1));
+
+    commands.push_back(new LD_Command<byte>( 0x78, 1, 4, "LD A,B",
+                                                        new RegisterReference<byte>(a),
+                                                        new RegisterReference<byte>(b)));
+
+    commands.push_back(new OR_Command( 0xb1, 1, 4, "OR C", new RegisterReference<byte>(c)));
+
+    commands.push_back(new RET_Command( 0xc9, 1, 16, "RET"));
+
+    commands.push_back(new CPL_Command( 0x2f, 1, 4, "CPL"));
+
+    commands.push_back(new AND_Command( 0xe6, 2, 8, "AND d8", new MemoryReference<byte, word>(this, pc)));
+
 /*
 static Command instructionSet[] = {
-    {0x01, 3, 12, "LD BC,d16",  ch_LD_BC_d16},
     {0x05, 1,  4, "DEC B",      ch_DEC_B},
-    {0x0b, 1,  8, "DEC BC",     ch_DEC_BC},
-    {0x0c, 1,  4, "INC C",      ch_INC_C},
-    {0x2a, 1,  8, "LD A,(HL+)", ch_LD_A_aHLI},
-    {0x2f, 1,  4, "CPL",        ch_CPL},
-    {0x31, 3, 12, "LD SP,d16",  ch_LD_SP_d16},
-    {0x36, 2, 12, "LD (HL),d8", ch_LD_aHL_d8},
-    {0x78, 1,  4, "LD A,B",     ch_LD_A_B},
-    {0xb1, 1,  4, "OR C",       ch_OR_C},
-    {0xcd, 3, 24, "CALL a16",   ch_CALL_a16},
-    {0xc9, 1, 16, "RET",        ch_RET},
-    {0xe0, 2, 12, "LDH (a8),A", ch_LDH_a8_A},
-    {0xe2, 1,  8, "LD (C),A",   ch_LD_aC_A},
-    {0xe6, 2,  8, "AND d8",     ch_AND_d8},
-    {0xea, 3, 16, "LD (a16),A", ch_LD_a16_A},
-    {0xf0, 2, 12, "LDH A,(a8)", ch_LDH_A_a8},
-    {0xfe, 2,  8, "CP d8",      ch_CP_d8},
 };
 */
 }
