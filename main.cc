@@ -114,22 +114,22 @@ static void draw()
 
 static void idle()
 {
-    /*
-    while (1) {
-        gb->process();
-    }
-    exit(1);
-    */
-    //usleep(1000000);
-    /*
-    offset += 32;
-    printf("%x\n", offset);
-    */
-    int i = 2048;
-    while (i--) {
+    int oldCycles = gb->cpu->cycles;
+    while ((gb->cpu->cycles - oldCycles) < 100) {
         gb->cpu->step();
+
+        gb->cpu->ly += 1;
+        if (gb->cpu->ly > 153) {
+            gb->cpu->ly = 0;
+        } else if (gb->cpu->ly == 144) {
+            /* vblank interrupt */
+        }
     }
-    glutPostRedisplay();
+
+    if (gb->cpu->cycles > 3000) {
+        gb->cpu->cycles = 0;
+        glutPostRedisplay();
+    }
 }
 
 int main(int argc, char *argv[])
