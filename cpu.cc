@@ -95,6 +95,25 @@ public:
     };
 };
 
+class JP_a16_Command : public Command {
+private:
+    Condition *condition;
+public:
+    JP_a16_Command(byte code, byte length, byte cycles, const char *mnemonic, Condition *condition)
+        : Command(code, length, cycles, mnemonic), condition(condition) {};
+    virtual ~JP_a16_Command() { delete condition; };
+    void run(CPU *cpu) {
+        if ((*condition)(cpu)) {
+            cpu->pc = cpu->memory->get<word>(cpu->pc);
+            cpu->cycles += 16;
+        } else {
+            cpu->cycles += 12;
+            cpu->pc++;
+            cpu->pc++;
+        }
+    };
+};
+
 class JR_Command : public Command {
 private:
     Condition *condition;
@@ -507,8 +526,12 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     ly = 0x00;
 
     commands.push_back(new NOP_Command(  0x00, 1,    4, "NOP"));
+
     commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16",  new MemoryReference<word, word>(this, pc)));
     commands.push_back(new JP_Command(   0xe9, 1,    4, "JP (HL)", new RegisterReference<word>(hl)));
+
+    commands.push_back(new JP_a16_Command( 0xca, 3, 0, "JP Z,a16", new Z_Condition()));
+
     commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A", new RegisterReference<byte>(a)));
     commands.push_back(new XOR_Command(  0xa9, 1,    4, "XOR C", new RegisterReference<byte>(c)));
     commands.push_back(new LD_Command<word>( 0x21, 3,   12, "LD HL,d16",
@@ -533,17 +556,19 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x4f, 1, 4, "LD C,A", new RegisterReference<byte>(c), new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<byte>( 0x79, 1, 4, "LD A,C", new RegisterReference<byte>(a), new RegisterReference<byte>(c)));
     commands.push_back(new LD_Command<byte>( 0x5f, 1, 4, "LD E,A", new RegisterReference<byte>(e), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x7c, 1, 4, "LD A,H", new RegisterReference<byte>(a), new RegisterReference<byte>(h)));
 
     commands.push_back(new INC_Command<byte>( 0x04, 1, 4, "INC B", new RegisterReference<byte>(b), 1));
     commands.push_back(new INC_Command<byte>( 0x0c, 1, 4, "INC C", new RegisterReference<byte>(c), 1));
 
 
     commands.push_back(new INC_Command<byte>( 0x05, 1, 4, "DEC B", new RegisterReference<byte>(b), -1));
+    commands.push_back(new INC_Command<byte>( 0x0d, 1, 4, "DEC C", new RegisterReference<byte>(c), -1));
+    commands.push_back(new INC_Command<byte>( 0x35, 1, 12, "DEC (HL)", new MemoryReference<byte, word>(this, hl), -1));
 
     commands.push_back(new JR_r8_Command( 0x20, 2, 0, "JR NZ,r8", new NZ_Condition()));
+    commands.push_back(new JR_r8_Command( 0x28, 2, 0, "JR N,r8", new Z_Condition()));
     commands.push_back(new JR_Command( 0x18, 2, 12, "JR r8"));
-
-    commands.push_back(new INC_Command<byte>( 0x0d, 1, 4, "DEC C", new RegisterReference<byte>(c), -1));
 
     commands.push_back(new LD_Command<byte>( 0x3e, 2, 8, "LD A,d8",
                                                         new RegisterReference<byte>(a),
@@ -566,6 +591,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0xea, 3, 16, "LD (a16),A",
                                                         new MemoryReference<byte, word>(this, pc),
                                                         new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0xfa, 3, 16, "LD A,(a16)",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte, word>(this, pc)));
     commands.push_back(new LD_Command<word>( 0x31, 3, 12, "LD SP,d16",
                                                         new RegisterReference<word>(sp),
                                                         new MemoryReference<word, word>(this, pc)));
@@ -580,6 +608,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new MemoryReference<byte, word>(this, hl)));
     commands.push_back(new LD_Command<byte>( 0x5e, 1, 8, "LD E,(HL)",
                                                         new RegisterReference<byte>(e),
+                                                        new MemoryReference<byte, word>(this, hl)));
+    commands.push_back(new LD_Command<byte>( 0x7e, 1, 8, "LD A,(HL)",
+                                                        new RegisterReference<byte>(a),
                                                         new MemoryReference<byte, word>(this, hl)));
 
     commands.push_back(new LD_Command<byte>( 0xe2, 1, 8, "LD (C),A",
@@ -608,6 +639,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     commands.push_back(new AND_Command( 0xe6, 2, 8, "AND d8", new MemoryReference<byte, word>(this, pc)));
     commands.push_back(new AND_Command( 0xa1, 1, 4, "AND C", new RegisterReference<byte>(c)));
+    commands.push_back(new AND_Command( 0xa7, 1, 4, "AND A", new RegisterReference<byte>(a)));
 
     commands.push_back(new RLCA_Command( 0x07, 1, 4, "RLCA"));
 
@@ -624,10 +656,12 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new RegisterReference<byte>(a),
                                                         new MemoryReference<byte, word>(this, de)));
 
+    commands.push_back(new PUSH_Command( 0xc5, 1, 16, "PUSH BC", new RegisterReference<word>(bc)));
     commands.push_back(new PUSH_Command( 0xd5, 1, 16, "PUSH DE", new RegisterReference<word>(de)));
     commands.push_back(new PUSH_Command( 0xe5, 1, 16, "PUSH HL", new RegisterReference<word>(hl)));
     commands.push_back(new PUSH_Command( 0xf5, 1, 16, "PUSH AF", new RegisterReference<word>(af)));
 
+    commands.push_back(new POP_Command(  0xc1, 1, 12, "POP BC", new RegisterReference<word>(bc)));
     commands.push_back(new POP_Command(  0xd1, 1, 12, "POP DE", new RegisterReference<word>(de)));
     commands.push_back(new POP_Command(  0xe1, 1, 12, "POP HL", new RegisterReference<word>(hl)));
     commands.push_back(new POP_Command(  0xf1, 1, 12, "POP AF", new RegisterReference<word>(af)));
