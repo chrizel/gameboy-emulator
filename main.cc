@@ -79,7 +79,11 @@ static void draw()
                 byte byte2 = gb->memory->get<byte>(address + 1);
 
                 for (int x = 0; x < 8; x++) {
-                    int i = ((byte1 & (1 << x)) >> (x))
+                    int i;
+                    if (x == 0)
+                        i = (byte1 & 1) + ((byte2 & 1) << 1);
+                    else
+                        i = ((byte1 & (1 << x)) >> (x))
                           + ((byte2 & (1 << x)) >> (x-1));
                     set_pixel((col * 8) + 7 - x, (row * 8) + y, i);
                 }
@@ -115,7 +119,7 @@ static void draw()
 static void idle()
 {
     int oldCycles = gb->cpu->cycles;
-    while ((gb->cpu->cycles - oldCycles) < 440) {
+    while ((gb->cpu->cycles - oldCycles) < 270) {
         // TODO: write joypad data
         gb->memory->set<byte>(0xff00, 0xff);
 
