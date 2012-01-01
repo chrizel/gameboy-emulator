@@ -76,12 +76,12 @@ void Debugger::handleInstruction(CPU *cpu, word address)
 void Debugger::handleMemoryAccess(Memory *memory, word address, bool set)
 {
     static bool inHandleMemoryAccess = false;
-    if (inHandleMemoryAccess || watches.empty())
+    if (inHandleMemoryAccess || (!verboseCPU && watches.empty()))
         return;
 
     inHandleMemoryAccess = true;
     Watches::iterator it = std::find(watches.begin(), watches.end(), address);
-    if(it != watches.end()) {
+    if(verboseCPU || (it != watches.end())) {
         if (set) {
             printf(" \x1b[31mset %04x to %02x\x1b[0m\n", address.value(), memory->get<byte>(address));
         } else {
