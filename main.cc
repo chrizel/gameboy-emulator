@@ -11,6 +11,8 @@
 
 #include "gameboy.h"
 #include "cpu.h"
+#include "word.h"
+#include "memory.h"
 
 static GameBoy *gb = 0;
 static GLubyte screen[GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3];
@@ -54,42 +56,33 @@ static void cleanup()
     delete gb;
 }
 
-/*
-static int offset = 0x3000;
-*/
-
 static void draw()
 {
-    /*
-    int x, y, spritey, spritex, i;
-    char byte1, byte2;
-    */
-
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
 
     memset(screen, 0, GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3);
     set_pixel(0, 0, 0);
+    set_pixel(1, 1, 0);
+    set_pixel(2, 2, 0);
 
-    /*
-#define w 20
-#define h 18 
-    for (spritey = 0; spritey < h; spritey++) {
-        for (spritex = 0; spritex < w; spritex++) {
-            for (y = 0; y < 8; y++) {
-                i = offset + (spritey * w + spritex);
-                byte1 = gb->mem[0x0 + (i * 16) + (y * 2) + 0];
-                byte2 = gb->mem[0x0 + (i * 16) + (y * 2) + 1];
+    for (int row = 0; row < 32; row++) {
+        for (int col = 0; col < 32; col++) {
+            byte tile = gb->memory->get<byte>(0x9800 + (row * 32) + col);
 
-                for (x = 0; x < 8; x++) {
-                    i = ((byte1 & (1 << x)) >> (x))
-                      + ((byte2 & (1 << x)) >> (x-1));
-                    set_pixel((spritex * 8) + 7 - x, (spritey * 8) + y, i);
+            for (int y = 0; y < 8; y++) {
+                int address = 0x8000 + (tile * 16) + (y * 2);
+                byte byte1 = gb->memory->get<byte>(address);
+                byte byte2 = gb->memory->get<byte>(address + 1);
+
+                for (int x = 0; x < 8; x++) {
+                    int i = ((byte1 & (1 << x)) >> (x))
+                          + ((byte2 & (1 << x)) >> (x-1));
+                    set_pixel((col * 8) + 7 - x, (row * 8) + y, i);
                 }
             }
         }
     }
-    */
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GB_DISPLAY_WIDTH, GB_DISPLAY_HEIGHT,
                  0, GL_RGB, GL_UNSIGNED_BYTE, screen);
@@ -118,16 +111,22 @@ static void draw()
 
 static void idle()
 {
+    /*
     while (1) {
         gb->process();
     }
     exit(1);
+    */
+    //usleep(1000000);
     /*
-    usleep(1000000);
     offset += 32;
     printf("%x\n", offset);
-    glutPostRedisplay();
     */
+    int i = 2048;
+    while (i--) {
+        gb->cpu->step();
+    }
+    glutPostRedisplay();
 }
 
 int main(int argc, char *argv[])
@@ -142,7 +141,7 @@ int main(int argc, char *argv[])
     }
     atexit(cleanup);
 
-    idle(); // headless mode
+    //idle(); // headless mode
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
