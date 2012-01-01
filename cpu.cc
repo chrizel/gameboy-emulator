@@ -522,6 +522,62 @@ public:
     }
 };
 
+class BIT_Command : public Command {
+private:
+    byte bit;
+    Reference<byte> *ref;
+public:
+    BIT_Command(byte code, byte length, byte cycles, const char *mnemonic, byte bit, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), bit(bit), ref(ref) {};
+    virtual ~BIT_Command() { delete ref; };
+
+    void run(CPU *cpu) {
+        cpu->flagZ((ref->get() & (1 << bit)) == 0);
+        cpu->flagN(0);
+        cpu->flagH(1);
+    }
+};
+
+class SLA_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    SLA_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~SLA_Command() { delete ref; };
+    void run(CPU *cpu) {
+        byte v = ref->get();
+        byte bit7 = v & (1 << 7);
+        v <<= 1;
+        ref->set(v);
+
+        cpu->flagZ(v == 0);
+        cpu->flagH(0);
+        cpu->flagN(0);
+        cpu->flagC(bit7);
+    };
+};
+
+class SRL_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    SRL_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~SRL_Command() { delete ref; };
+    void run(CPU *cpu) {
+        byte v = ref->get();
+        byte bit0 = v & 1;
+        v >>= 1;
+        ref->set(v);
+
+        cpu->flagZ(v == 0);
+        cpu->flagH(0);
+        cpu->flagN(0);
+        cpu->flagC(bit0);
+    };
+};
+
 class CB_Command : public Command {
 private:
     Commands commands;
@@ -529,8 +585,21 @@ public:
     CB_Command(byte code, byte length, byte cycles, const char *mnemonic, CPU *cpu)
         : Command(code, length, cycles, mnemonic)
     {
+        commands.push_back(new SLA_Command(0x27, 2, 8, "SLA A", new RegisterReference<byte>(cpu->a)));
         commands.push_back(new SWAP_Command(0x37, 2, 8, "SWAP A", new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new SWAP_Command(0x33, 2, 8, "SWAP E", new RegisterReference<byte>(cpu->e)));
+        commands.push_back(new SRL_Command(0x3f, 2, 8, "SRL A", new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new BIT_Command(0x5f, 2, 8, "BIT 3,A", 3, new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new BIT_Command(0x7f, 2, 8, "BIT 7,A", 7, new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new BIT_Command(0x40, 2, 8, "BIT 0,B", 0, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x48, 2, 8, "BIT 1,B", 1, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x50, 2, 8, "BIT 2,B", 2, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x58, 2, 8, "BIT 3,B", 3, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x60, 2, 8, "BIT 4,B", 4, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x68, 2, 8, "BIT 5,B", 5, new RegisterReference<byte>(cpu->b)));
+        commands.push_back(new BIT_Command(0x7e, 2, 16, "BIT 7,(HL)", 7, new MemoryReference<byte>(cpu, cpu->hl)));
         commands.push_back(new RES_Command(0x87, 2, 8, "RES 0,A", 0, new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new RES_Command(0x86, 2, 16, "RES 0,(HL)", 0, new MemoryReference<byte>(cpu, cpu->hl)));
     }
 
     Command * findCommand(byte code)
@@ -586,6 +655,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16",  new MemoryReference<word>(this, pc)));
     commands.push_back(new JP_Command(   0xe9, 1,    4, "JP (HL)", new RegisterReference<word>(hl)));
 
+    commands.push_back(new JP_a16_Command( 0xc2, 3, 0, "JP NZ,a16", new NZ_Condition()));
     commands.push_back(new JP_a16_Command( 0xca, 3, 0, "JP Z,a16", new Z_Condition()));
 
     commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A", new RegisterReference<byte>(a)));
@@ -594,6 +664,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new RegisterReference<word>(hl),
                                                         new MemoryReference<word>(this, pc)));
 
+    commands.push_back(new LD_Command<byte>( 0x3e, 2, 8, "LD A,d8",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte>(this, pc)));
     commands.push_back(new LD_Command<byte>( 0x0e, 2,    8, "LD C,d8",
                                                         new RegisterReference<byte>(c),
                                                         new MemoryReference<byte>(this, pc)));
@@ -603,16 +676,28 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x16, 2,    8, "LD D,d8",
                                                         new RegisterReference<byte>(d),
                                                         new MemoryReference<byte>(this, pc)));
-
-    commands.push_back(new LD_Command<byte>( 0x32, 1,    8, "LD (HL-),A",
-                                                        new MemoryReference<byte>(this, hl, -1),
-                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x26, 2,    8, "LD H,d8",
+                                                        new RegisterReference<byte>(h),
+                                                        new MemoryReference<byte>(this, pc)));
 
     commands.push_back(new LD_Command<byte>( 0x47, 1, 4, "LD B,A", new RegisterReference<byte>(b), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x40, 1, 4, "LD B,B", new RegisterReference<byte>(b), new RegisterReference<byte>(b)));
     commands.push_back(new LD_Command<byte>( 0x4f, 1, 4, "LD C,A", new RegisterReference<byte>(c), new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<byte>( 0x79, 1, 4, "LD A,C", new RegisterReference<byte>(a), new RegisterReference<byte>(c)));
+    commands.push_back(new LD_Command<byte>( 0x7a, 1, 4, "LD A,D", new RegisterReference<byte>(a), new RegisterReference<byte>(d)));
+    commands.push_back(new LD_Command<byte>( 0x7b, 1, 4, "LD A,E", new RegisterReference<byte>(a), new RegisterReference<byte>(e)));
+    commands.push_back(new LD_Command<byte>( 0x57, 1, 4, "LD D,A", new RegisterReference<byte>(d), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x54, 1, 4, "LD D,H", new RegisterReference<byte>(d), new RegisterReference<byte>(h)));
     commands.push_back(new LD_Command<byte>( 0x5f, 1, 4, "LD E,A", new RegisterReference<byte>(e), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x5d, 1, 4, "LD E,L", new RegisterReference<byte>(e), new RegisterReference<byte>(l)));
+    commands.push_back(new LD_Command<byte>( 0x67, 1, 4, "LD H,A", new RegisterReference<byte>(h), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x60, 1, 4, "LD H,B", new RegisterReference<byte>(h), new RegisterReference<byte>(b)));
+    commands.push_back(new LD_Command<byte>( 0x62, 1, 4, "LD H,D", new RegisterReference<byte>(h), new RegisterReference<byte>(d)));
+    commands.push_back(new LD_Command<byte>( 0x69, 1, 4, "LD L,C", new RegisterReference<byte>(l), new RegisterReference<byte>(c)));
+    commands.push_back(new LD_Command<byte>( 0x6f, 1, 4, "LD L,A", new RegisterReference<byte>(l), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x6b, 1, 4, "LD L,E", new RegisterReference<byte>(l), new RegisterReference<byte>(e)));
     commands.push_back(new LD_Command<byte>( 0x7c, 1, 4, "LD A,H", new RegisterReference<byte>(a), new RegisterReference<byte>(h)));
+    commands.push_back(new LD_Command<byte>( 0x7d, 1, 4, "LD A,L", new RegisterReference<byte>(a), new RegisterReference<byte>(l)));
 
     commands.push_back(new INC_Command<byte>( 0x3c, 1, 4, "INC A", new RegisterReference<byte>(a), 1));
     commands.push_back(new INC_Command<byte>( 0x04, 1, 4, "INC B", new RegisterReference<byte>(b), 1));
@@ -625,15 +710,12 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new INC_Command<byte>( 0x3d, 1, 4, "DEC A", new RegisterReference<byte>(a), -1));
     commands.push_back(new INC_Command<byte>( 0x05, 1, 4, "DEC B", new RegisterReference<byte>(b), -1));
     commands.push_back(new INC_Command<byte>( 0x0d, 1, 4, "DEC C", new RegisterReference<byte>(c), -1));
+    commands.push_back(new INC_Command<byte>( 0x2d, 1, 4, "DEC L", new RegisterReference<byte>(l), -1));
     commands.push_back(new INC_Command<byte>( 0x35, 1, 12, "DEC (HL)", new MemoryReference<byte>(this, hl), -1));
 
     commands.push_back(new JR_r8_Command( 0x20, 2, 0, "JR NZ,r8", new NZ_Condition()));
     commands.push_back(new JR_r8_Command( 0x28, 2, 0, "JR N,r8", new Z_Condition()));
     commands.push_back(new JR_Command( 0x18, 2, 12, "JR r8"));
-
-    commands.push_back(new LD_Command<byte>( 0x3e, 2, 8, "LD A,d8",
-                                                        new RegisterReference<byte>(a),
-                                                        new MemoryReference<byte>(this, pc)));
 
     commands.push_back(new SET_IME_Command( 0xf3, 1, 4, "DI", 0));
     commands.push_back(new SET_IME_Command( 0xfb, 1, 4, "EI", 1));
@@ -661,9 +743,33 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x2a, 1, 8, "LD A,(HL+)",
                                                         new RegisterReference<byte>(a),
                                                         new MemoryReference<byte>(this, hl, 1)));
+    commands.push_back(new LD_Command<byte>( 0x32, 1,    8, "LD (HL-),A",
+                                                        new MemoryReference<byte>(this, hl, -1),
+                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x77, 1, 8, "LD (HL),A",
+                                                        new MemoryReference<byte>(this, hl),
+                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x71, 1, 8, "LD (HL),C",
+                                                        new MemoryReference<byte>(this, hl),
+                                                        new RegisterReference<byte>(c)));
+    commands.push_back(new LD_Command<byte>( 0x72, 1, 8, "LD (HL),D",
+                                                        new MemoryReference<byte>(this, hl),
+                                                        new RegisterReference<byte>(d)));
+    commands.push_back(new LD_Command<byte>( 0x73, 1, 8, "LD (HL),E",
+                                                        new MemoryReference<byte>(this, hl),
+                                                        new RegisterReference<byte>(e)));
     commands.push_back(new LD_Command<byte>( 0x22, 1, 8, "LD (HL+),A",
                                                         new MemoryReference<byte>(this, hl, 1),
                                                         new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x3a, 1, 8, "LD A,(HL-)",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte>(this, hl, -1)));
+    commands.push_back(new LD_Command<byte>( 0x46, 1, 8, "LD B,(HL)",
+                                                        new RegisterReference<byte>(b),
+                                                        new MemoryReference<byte>(this, hl)));
+    commands.push_back(new LD_Command<byte>( 0x4e, 1, 8, "LD C,(HL)",
+                                                        new RegisterReference<byte>(c),
+                                                        new MemoryReference<byte>(this, hl)));
     commands.push_back(new LD_Command<byte>( 0x56, 1, 8, "LD D,(HL)",
                                                         new RegisterReference<byte>(d),
                                                         new MemoryReference<byte>(this, hl)));
@@ -673,6 +779,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x7e, 1, 8, "LD A,(HL)",
                                                         new RegisterReference<byte>(a),
                                                         new MemoryReference<byte>(this, hl)));
+    commands.push_back(new LD_Command<byte>( 0x0a, 1, 8, "LD A,(BC)",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte>(this, bc)));
 
     commands.push_back(new LD_Command<byte>( 0xe2, 1, 8, "LD (C),A",
                                                         new Memory_SingleRegister_Reference<byte>(this, c),
@@ -684,6 +793,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new RegisterReference<word>(bc),
                                                         new MemoryReference<word>(this, pc)));
     commands.push_back(new INC_Command<word>( 0x0b, 1, 8, "DEC BC", new RegisterReference<word>(bc), -1));
+    commands.push_back(new INC_Command<word>( 0x03, 1, 8, "INC BC", new RegisterReference<word>(bc), 1));
     commands.push_back(new INC_Command<word>( 0x13, 1, 8, "INC DE", new RegisterReference<word>(de), 1));
     commands.push_back(new INC_Command<word>( 0x23, 1, 8, "INC HL", new RegisterReference<word>(hl), 1));
 
@@ -694,6 +804,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new OR_Command( 0xb7, 1, 4, "OR A", new RegisterReference<byte>(a)));
     commands.push_back(new OR_Command( 0xb0, 1, 4, "OR B", new RegisterReference<byte>(b)));
     commands.push_back(new OR_Command( 0xb1, 1, 4, "OR C", new RegisterReference<byte>(c)));
+    commands.push_back(new OR_Command( 0xf6, 2, 8, "OR d8", new MemoryReference<byte>(this, pc)));
 
     commands.push_back(new RET_Command( 0xc9, 1, 0, "RET"));
 
@@ -736,11 +847,15 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new RST_Command( 0xef, 1, 16, "RST 28H", new ValueReference<byte>(0x28)));
 
     commands.push_back(new ADD_Command<byte>( 0x87, 1, 4, "ADD A,A", new RegisterReference<byte>(a), new RegisterReference<byte>(a)));
-
+    commands.push_back(new ADD_Command<byte>( 0x85, 1, 4, "ADD A,L", new RegisterReference<byte>(a), new RegisterReference<byte>(l)));
+    commands.push_back(new ADD_Command<byte>( 0xc6, 2, 8, "ADD A,d8", new RegisterReference<byte>(a), new MemoryReference<byte>(this, pc)));
+    commands.push_back(new ADD_Command<word>( 0x09, 1, 8, "ADD HL,BC", new RegisterReference<word>(hl), new RegisterReference<word>(bc)));
     commands.push_back(new ADD_Command<word>( 0x19, 1, 8, "ADD HL,DE", new RegisterReference<word>(hl), new RegisterReference<word>(de)));
 
     commands.push_back(new RETI_Command( 0xd9, 1, 16, "RETI"));
     commands.push_back(new SCF_Command( 0x37, 1, 4, "SCF"));
+
+    printf("%lu commands\n", commands.size());
 }
 
 CPU::~CPU()
