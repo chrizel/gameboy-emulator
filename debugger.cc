@@ -35,6 +35,30 @@ void Debugger::listBreakpoints()
     }
 }
 
+void Debugger::toggleWatch(word address)
+{
+    Watches::iterator it = std::find(watches.begin(), watches.end(), address);
+    if(it == watches.end()) {
+        printf("Set watch %04x\n", address.value());
+        watches.push_back(address);
+    } else {
+        printf("Remove watch %04x\n", address.value());
+        watches.erase(it);
+    }
+}
+
+void Debugger::listWatches()
+{
+    if (watches.empty()) {
+        printf("No wathces set\n");
+    } else {
+        printf("List watches:\n");
+        for (Watches::iterator it = watches.begin(); it != watches.end(); ++it) {
+            printf("\t%04x\n", (*it).value());
+        }
+    }
+}
+
 void Debugger::handleInstruction(CPU *cpu, word address)
 {
     if (stepMode) {
@@ -49,10 +73,29 @@ void Debugger::handleInstruction(CPU *cpu, word address)
     }
 }
 
+void Debugger::handleMemoryAccess(Memory *memory, word address, bool set)
+{
+    static bool inHandleMemoryAccess = false;
+    if (inHandleMemoryAccess || watches.empty())
+        return;
+
+    inHandleMemoryAccess = true;
+    Watches::iterator it = std::find(watches.begin(), watches.end(), address);
+    if(it != watches.end()) {
+        if (set) {
+            printf(" \x1b[31mset %04x to %02x\x1b[0m\n", address.value(), memory->get<byte>(address));
+        } else {
+            printf(" \x1b[32mget %04x -> %02x\x1b[0m\n", address.value(), memory->get<byte>(address));
+        }
+    }
+    inHandleMemoryAccess = false;
+}
+
 void Debugger::showMemory(CPU *cpu, word address)
 {
     const byte colcount = 8;
     const byte rowcount = 16;
+
     word base;
     if (address.value() < (colcount*rowcount/2))
         base = (colcount*rowcount/2);
@@ -138,13 +181,24 @@ void Debugger::prompt(CPU *cpu)
             break;
         case 'b': {
             word w;
-            sscanf(buf, "b %04x", &w.d.w);
-            toggleBreakpoint(w);
+            if (strlen(buf) < 4) {
+                listBreakpoints();
+            } else {
+                sscanf(buf, "b %04x", &w.d.w);
+                toggleBreakpoint(w);
+            }
             break;
         }
-        case 'l':
-            listBreakpoints();
+        case 'w': {
+            word w;
+            if (strlen(buf) < 4) {
+                listWatches();
+            } else {
+                sscanf(buf, "w %04x", &w.d.w);
+                toggleWatch(w);
+            }
             break;
+        }
         case 'p': {
             word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
@@ -180,10 +234,10 @@ void Debugger::prompt(CPU *cpu)
             break;
         }
         case 'h':
-            puts("b - toggle breakpoint");
+            puts("b - list/toggle breakpoint(s)");
             puts("c - continue");
+            puts("e - list watches");
             puts("i - print current instruction");
-            puts("l - list breakpoints");
             puts("n - next");
             puts("m - show memory at address");
             puts("p - print next 16 instructions");
@@ -191,6 +245,7 @@ void Debugger::prompt(CPU *cpu)
             puts("r - print registers");
             puts("s - show stack");
             puts("v - toggle verbose cpu");
+            puts("w - list/toggle watch(es)");
             break;
         }
     }

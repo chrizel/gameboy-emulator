@@ -7,8 +7,8 @@
 
 GameBoy::GameBoy(const char *file)
 {
-    memory = new Memory(file);
     debugger = new Debugger();
+    memory = new Memory(file, debugger);
     cpu = new CPU(memory, debugger);
 }
 

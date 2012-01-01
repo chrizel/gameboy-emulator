@@ -4,8 +4,9 @@
 #include <fstream>
 
 #include "memory.h"
+#include "debugger.h"
 
-Memory::Memory(const char *file)
+Memory::Memory(const char *file, Debugger *debugger) : debugger(debugger)
 {
     std::ifstream is;
     is.open(file, std::ios::binary);
@@ -32,20 +33,12 @@ Memory::~Memory()
 }
 
 template <> void Memory::set<byte>(word address, byte b) {
-    /*
-    if (address.value() >= 0x8000) {
-        printf("set %04x -> %02x\n", address.value(), b);
-    }
-    */
     rom[address.value()] = b; 
+    debugger->handleMemoryAccess(this, address, true);
 }
 
-template <> byte Memory::get<byte>(word address) const {
-    /*
-    if (address.value() >= 0x8000) {
-        printf("get %04x -> %02x\n", address.value(), rom[address.value()]);
-    }
-    */
+template <> byte Memory::get<byte>(word address) {
+    debugger->handleMemoryAccess(this, address, false);
     return rom[address.value()];
 }
 
@@ -54,7 +47,7 @@ template <> void Memory::set<word>(word address, word w) {
     set<byte>(address.value()+1, w.hi());
 }
 
-template <> word Memory::get<word>(word address) const {
+template <> word Memory::get<word>(word address) {
     byte lo = get<byte>(address.value());
     byte hi = get<byte>(address.value()+1);
     return word(lo, hi);
