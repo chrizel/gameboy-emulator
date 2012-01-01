@@ -118,8 +118,8 @@ public:
         : Command(code, length, cycles, mnemonic), ref(ref) {};
     virtual ~XOR_Command() { delete ref; };
     void run(CPU *cpu) {
-        ref->set(ref->get() ^ ref->get());
-        cpu->flagZ(ref->get() == 0);
+        cpu->a ^= ref->get();
+        cpu->flagZ(cpu->a == 0);
         cpu->flagN(0);
         cpu->flagH(0);
         cpu->flagC(0);
@@ -339,6 +339,58 @@ public:
     }
 };
 
+class SWAP_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    SWAP_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~SWAP_Command() { delete ref; };
+
+    void run(CPU *cpu) {
+        byte v = ref->get();
+        v = (v << 4) | (v >> 4);
+        ref->set(v);
+        cpu->flagZ(v == 0);
+        cpu->flagN(0);
+        cpu->flagH(0);
+        cpu->flagC(0);
+    }
+};
+
+class CB_Command : public Command {
+private:
+    Commands commands;
+public:
+    CB_Command(byte code, byte length, byte cycles, const char *mnemonic, CPU *cpu)
+        : Command(code, length, cycles, mnemonic)
+    {
+        commands.push_back(new SWAP_Command(0x37, 2, 8, "SWAP A", new RegisterReference<byte>(cpu->a)));
+    }
+
+    Command * findCommand(byte code)
+    {
+        for (Commands::iterator i = commands.begin(); i != commands.end(); ++i)
+            if ((*i)->code == code)
+                return *i;
+        return 0;
+    }
+
+    void run(CPU *cpu) {
+        byte code = cpu->memory->get<byte>(cpu->pc);
+        Command *command = findCommand(code);
+        if (command) {
+            cpu->pc++;
+            command->run(cpu);
+            cpu->cycles += command->cycles;
+        } else {
+            fprintf(stderr, "%04x *** Unknown CB machine code: %02x\n", cpu->pc.value(), code);
+            cpu->debugger->prompt(cpu);
+        }
+
+    }
+};
+
 
 CPU::CPU(Memory *memory, Debugger *debugger)
     : memory(memory),
@@ -366,8 +418,8 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     commands.push_back(new NOP_Command(  0x00, 1,    4, "NOP"));
     commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16"));
-    commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A",
-                                                        new RegisterReference<byte>(a)));
+    commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A", new RegisterReference<byte>(a)));
+    commands.push_back(new XOR_Command(  0xa9, 1,    4, "XOR C", new RegisterReference<byte>(c)));
     commands.push_back(new LD_Command<word>( 0x21, 3,   12, "LD HL,d16",
                                                         new RegisterReference<word>(hl),
                                                         new MemoryReference<word, word>(this, pc)));
@@ -382,6 +434,10 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x32, 1,    8, "LD (HL-),A",
                                                         new MemoryReference<byte, word>(this, hl, -1),
                                                         new RegisterReference<byte>(a)));
+
+    commands.push_back(new LD_Command<byte>( 0x47, 1, 4, "LD B,A", new RegisterReference<byte>(b), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x4f, 1, 4, "LD C,A", new RegisterReference<byte>(c), new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x79, 1, 4, "LD A,C", new RegisterReference<byte>(a), new RegisterReference<byte>(c)));
 
     commands.push_back(new INC_Command<byte>( 0x04, 1, 4, "INC B", new RegisterReference<byte>(b), 1));
     commands.push_back(new INC_Command<byte>( 0x0c, 1, 4, "INC C", new RegisterReference<byte>(c), 1));
@@ -441,6 +497,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new RegisterReference<byte>(a),
                                                         new RegisterReference<byte>(b)));
 
+    commands.push_back(new OR_Command( 0xb0, 1, 4, "OR B", new RegisterReference<byte>(b)));
     commands.push_back(new OR_Command( 0xb1, 1, 4, "OR C", new RegisterReference<byte>(c)));
 
     commands.push_back(new RET_Command( 0xc9, 1, 0, "RET"));
@@ -448,6 +505,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new CPL_Command( 0x2f, 1, 4, "CPL"));
 
     commands.push_back(new AND_Command( 0xe6, 2, 8, "AND d8", new MemoryReference<byte, word>(this, pc)));
+    commands.push_back(new AND_Command( 0xa1, 1, 4, "AND C", new RegisterReference<byte>(c)));
 
     commands.push_back(new RLCA_Command( 0x07, 1, 4, "RLCA"));
 
@@ -463,6 +521,8 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     commands.push_back(new PUSH_Command( 0xf5, 1, 16, "PUSH AF", new RegisterReference<word>(af)));
     commands.push_back(new POP_Command(  0xf1, 1, 12, "POP AF", new RegisterReference<word>(af)));
+
+    commands.push_back(new CB_Command( 0xcb, 1, 0, "CB", this));
 }
 
 CPU::~CPU()
