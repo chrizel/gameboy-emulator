@@ -11,10 +11,11 @@ class CPU;
 class Debugger
 {
 private:
-    bool verboseCPU, stepMode;
     Breakpoints breakpoints;
 
 public:
+    bool verboseCPU, stepMode;
+
     Debugger();
 
     void handleInstruction(CPU *cpu, word address);

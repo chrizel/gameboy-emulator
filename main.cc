@@ -1,3 +1,5 @@
+#include <string>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +15,7 @@
 #include "cpu.h"
 #include "word.h"
 #include "memory.h"
+#include "debugger.h"
 
 static GameBoy *gb = 0;
 static GLubyte screen[GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3];
@@ -131,17 +134,20 @@ static void idle()
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s rom\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [sv] rom\n", argv[0]);
         return 1;
     }
-    gb = new GameBoy(argv[1]);
+
+    gb = new GameBoy(argv[argc-1]);
     if (!gb) {
         return 1;
     }
     atexit(cleanup);
 
-    //idle(); // headless mode
+    std::string options(argc > 2 ? argv[1] : "");
+    gb->debugger->stepMode = options.find_first_of('s') != std::string::npos;
+    gb->debugger->verboseCPU = options.find_first_of('v') != std::string::npos;
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);

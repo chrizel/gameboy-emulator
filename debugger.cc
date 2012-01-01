@@ -7,7 +7,7 @@
 #include "cpu.h"
 #include "debugger.h"
 
-Debugger::Debugger() : verboseCPU(false), stepMode(false)
+Debugger::Debugger() : verboseCPU(false), stepMode(true)
 {
 }
 
