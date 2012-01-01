@@ -667,6 +667,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x3e, 2, 8, "LD A,d8",
                                                         new RegisterReference<byte>(a),
                                                         new MemoryReference<byte>(this, pc)));
+    commands.push_back(new LD_Command<byte>( 0x1e, 2,    8, "LD E,d8",
+                                                        new RegisterReference<byte>(e),
+                                                        new MemoryReference<byte>(this, pc)));
     commands.push_back(new LD_Command<byte>( 0x0e, 2,    8, "LD C,d8",
                                                         new RegisterReference<byte>(c),
                                                         new MemoryReference<byte>(this, pc)));
