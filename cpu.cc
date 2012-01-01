@@ -17,6 +17,19 @@ public:
 };
 
 template <class T>
+class ValueReference : public Reference<T>
+{
+private:
+    T r;
+public:
+    ValueReference(T r): r(r) {};
+    virtual T get() { return r; };
+    virtual void set(T v) {
+        fprintf(stderr, "*** ValueReference can not be set\n");
+    }
+};
+
+template <class T>
 class RegisterReference : public Reference<T>
 {
 private:
@@ -71,11 +84,14 @@ public:
 };
 
 class JP_Command : public Command {
+private:
+    Reference<word> *ref;
 public:
-    JP_Command(byte code, byte length, byte cycles, const char *mnemonic)
-        : Command(code, length, cycles, mnemonic) {};
+    JP_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<word> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~JP_Command() { delete ref; };
     void run(CPU *cpu) {
-        cpu->pc = cpu->memory->get<word>(cpu->pc);
+        cpu->pc = ref->get();
     };
 };
 
@@ -204,6 +220,47 @@ public:
 };
 
 template <class T>
+class ADD_Command : public Command {
+};
+
+template <>
+class ADD_Command<byte> : public Command {
+private:
+    Reference<byte> *ref0;
+    Reference<byte> *ref1;
+public:
+    ADD_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref0, Reference<byte> *ref1)
+        : Command(code, length, cycles, mnemonic), ref0(ref0), ref1(ref1) {};
+    virtual ~ADD_Command() { delete ref0; delete ref1; };
+    void run(CPU *cpu) {
+        byte v = ref0->get() + ref1->get();
+        ref0->set(v);
+        cpu->flagZ(v == 0);
+        cpu->flagN(0);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(0); // TODO: carry flag
+    }
+};
+
+template <>
+class ADD_Command<word> : public Command {
+private:
+    Reference<word> *ref0;
+    Reference<word> *ref1;
+public:
+    ADD_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<word> *ref0, Reference<word> *ref1)
+        : Command(code, length, cycles, mnemonic), ref0(ref0), ref1(ref1) {};
+    virtual ~ADD_Command() { delete ref0; delete ref1; };
+    void run(CPU *cpu) {
+        word v = ref0->get() + ref1->get();
+        ref0->set(v);
+        cpu->flagN(0);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(0); // TODO: carry flag
+    }
+};
+
+template <class T>
 class INC_Command : public Command {
 };
 
@@ -271,6 +328,22 @@ public:
         cpu->sp--;
         cpu->memory->set(cpu->sp, cpu->pc_lo);
         cpu->pc = address;
+    }
+};
+
+class RST_Command : public Command {
+private:
+    Reference<byte> *ref;
+public:
+    RST_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), ref(ref) {};
+    virtual ~RST_Command() { delete ref; };
+    void run(CPU *cpu) {
+        cpu->sp--;
+        cpu->memory->set(cpu->sp, cpu->pc_hi);
+        cpu->sp--;
+        cpu->memory->set(cpu->sp, cpu->pc_lo);
+        cpu->pc = word(ref->get(), 0x00);
     }
 };
 
@@ -417,7 +490,8 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     ly = 0x00;
 
     commands.push_back(new NOP_Command(  0x00, 1,    4, "NOP"));
-    commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16"));
+    commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16",  new MemoryReference<word, word>(this, pc)));
+    commands.push_back(new JP_Command(   0xe9, 1,    4, "JP (HL)", new MemoryReference<word, word>(this, hl)));
     commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A", new RegisterReference<byte>(a)));
     commands.push_back(new XOR_Command(  0xa9, 1,    4, "XOR C", new RegisterReference<byte>(c)));
     commands.push_back(new LD_Command<word>( 0x21, 3,   12, "LD HL,d16",
@@ -430,6 +504,9 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x06, 2,    8, "LD B,d8",
                                                         new RegisterReference<byte>(b),
                                                         new MemoryReference<byte, word>(this, pc)));
+    commands.push_back(new LD_Command<byte>( 0x16, 2,    8, "LD D,d8",
+                                                        new RegisterReference<byte>(d),
+                                                        new MemoryReference<byte, word>(this, pc)));
 
     commands.push_back(new LD_Command<byte>( 0x32, 1,    8, "LD (HL-),A",
                                                         new MemoryReference<byte, word>(this, hl, -1),
@@ -438,6 +515,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x47, 1, 4, "LD B,A", new RegisterReference<byte>(b), new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<byte>( 0x4f, 1, 4, "LD C,A", new RegisterReference<byte>(c), new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<byte>( 0x79, 1, 4, "LD A,C", new RegisterReference<byte>(a), new RegisterReference<byte>(c)));
+    commands.push_back(new LD_Command<byte>( 0x5f, 1, 4, "LD E,A", new RegisterReference<byte>(e), new RegisterReference<byte>(a)));
 
     commands.push_back(new INC_Command<byte>( 0x04, 1, 4, "INC B", new RegisterReference<byte>(b), 1));
     commands.push_back(new INC_Command<byte>( 0x0c, 1, 4, "INC C", new RegisterReference<byte>(c), 1));
@@ -480,6 +558,12 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x22, 1, 8, "LD (HL+),A",
                                                         new MemoryReference<byte, word>(this, hl, 1),
                                                         new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x56, 1, 8, "LD D,(HL)",
+                                                        new RegisterReference<byte>(d),
+                                                        new MemoryReference<byte, word>(this, hl)));
+    commands.push_back(new LD_Command<byte>( 0x5e, 1, 8, "LD E,(HL)",
+                                                        new RegisterReference<byte>(e),
+                                                        new MemoryReference<byte, word>(this, hl)));
 
     commands.push_back(new LD_Command<byte>( 0xe2, 1, 8, "LD (C),A",
                                                         new MemoryReference<byte, byte>(this, c),
@@ -492,6 +576,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new MemoryReference<word, word>(this, pc)));
     commands.push_back(new INC_Command<word>( 0x0b, 1, 8, "DEC BC", new RegisterReference<word>(bc), -1));
     commands.push_back(new INC_Command<word>( 0x13, 1, 8, "INC DE", new RegisterReference<word>(de), 1));
+    commands.push_back(new INC_Command<word>( 0x23, 1, 8, "INC HL", new RegisterReference<word>(hl), 1));
 
     commands.push_back(new LD_Command<byte>( 0x78, 1, 4, "LD A,B",
                                                         new RegisterReference<byte>(a),
@@ -519,10 +604,19 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new MemoryReference<byte, word>(this, de),
                                                         new RegisterReference<byte>(a)));
 
+    commands.push_back(new PUSH_Command( 0xd5, 1, 16, "PUSH DE", new RegisterReference<word>(de)));
     commands.push_back(new PUSH_Command( 0xf5, 1, 16, "PUSH AF", new RegisterReference<word>(af)));
+
+    commands.push_back(new POP_Command(  0xe1, 1, 12, "POP HL", new RegisterReference<word>(hl)));
     commands.push_back(new POP_Command(  0xf1, 1, 12, "POP AF", new RegisterReference<word>(af)));
 
     commands.push_back(new CB_Command( 0xcb, 1, 0, "CB", this));
+
+    commands.push_back(new RST_Command( 0xef, 1, 16, "RST 28H", new ValueReference<byte>(0x28)));
+
+    commands.push_back(new ADD_Command<byte>( 0x87, 1, 4, "ADD A,A", new RegisterReference<byte>(a), new RegisterReference<byte>(a)));
+
+    commands.push_back(new ADD_Command<word>( 0x19, 1, 8, "ADD HL,DE", new RegisterReference<word>(hl), new RegisterReference<word>(de)));
 }
 
 CPU::~CPU()
