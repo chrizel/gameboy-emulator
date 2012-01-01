@@ -560,6 +560,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     commands.push_back(new INC_Command<byte>( 0x04, 1, 4, "INC B", new RegisterReference<byte>(b), 1));
     commands.push_back(new INC_Command<byte>( 0x0c, 1, 4, "INC C", new RegisterReference<byte>(c), 1));
+    commands.push_back(new INC_Command<byte>( 0x2c, 1, 4, "INC L", new RegisterReference<byte>(l), 1));
 
 
     commands.push_back(new INC_Command<byte>( 0x05, 1, 4, "DEC B", new RegisterReference<byte>(b), -1));

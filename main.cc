@@ -116,6 +116,9 @@ static void idle()
 {
     int oldCycles = gb->cpu->cycles;
     while ((gb->cpu->cycles - oldCycles) < 100) {
+        // TODO: write joypad data
+        gb->memory->set<byte>(0xff00, 0xff);
+
         gb->cpu->step();
 
         gb->cpu->ly += 1;
