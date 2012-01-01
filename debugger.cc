@@ -54,7 +54,7 @@ void Debugger::showMemory(CPU *cpu, word address)
     word start = address.value() - address.value() % 10;
     for (word i = start; i < start+word(10*16); i++) {
         if (i.value() % 10 == 0) {
-            printf("\n%04x", i.value());
+            printf("\n\t%04x", i.value());
         }
 
         if (i == address) {
@@ -64,6 +64,19 @@ void Debugger::showMemory(CPU *cpu, word address)
         }
     }
     printf("\n");
+}
+
+void Debugger::showStack(CPU *cpu)
+{
+    word start = cpu->sp + word(8);
+    if (start < 0x0010)
+        start = 0xffff;
+    for (word i = start; i >= cpu->sp; i--) {
+        if (i == cpu->sp)
+            printf("\t\x1b[31m%04x %02x\x1b[0m\n", i.value(), cpu->memory->get<byte>(i));
+        else
+            printf("\t%04x %02x\n", i.value(), cpu->memory->get<byte>(i));
+    }
 }
 
 void Debugger::printInstruction(CPU *cpu, word address)
@@ -142,6 +155,9 @@ void Debugger::prompt(CPU *cpu)
             verboseCPU = !verboseCPU;
             printf("verbose cpu = %d\n", verboseCPU);
             break;
+        case 's':
+            showStack(cpu);
+            break;
         case 'm': {
             word w;
             sscanf(buf, "m %04x", &w.d.w);
@@ -158,6 +174,7 @@ void Debugger::prompt(CPU *cpu)
             puts("p - print next 16 instructions");
             puts("q - quit");
             puts("r - print registers");
+            puts("s - show stack");
             puts("v - toggle verbose cpu");
             break;
         }

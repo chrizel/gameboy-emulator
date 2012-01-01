@@ -24,6 +24,7 @@ public:
     void toggleBreakpoint(word address);
     void listBreakpoints();
     void showMemory(CPU *cpu, word address);
+    void showStack(CPU *cpu);
 };
 
 #endif
