@@ -431,6 +431,22 @@ public:
     }
 };
 
+class RES_Command : public Command {
+private:
+    byte bit;
+    Reference<byte> *ref;
+public:
+    RES_Command(byte code, byte length, byte cycles, const char *mnemonic, byte bit, Reference<byte> *ref)
+        : Command(code, length, cycles, mnemonic), bit(bit), ref(ref) {};
+    virtual ~RES_Command() { delete ref; };
+
+    void run(CPU *cpu) {
+        byte v = ref->get();
+        v = v & ~(1 << bit);
+        ref->set(v);
+    }
+};
+
 class CB_Command : public Command {
 private:
     Commands commands;
@@ -439,6 +455,7 @@ public:
         : Command(code, length, cycles, mnemonic)
     {
         commands.push_back(new SWAP_Command(0x37, 2, 8, "SWAP A", new RegisterReference<byte>(cpu->a)));
+        commands.push_back(new RES_Command(0x87, 2, 8, "RES 0,A", 0, new RegisterReference<byte>(cpu->a)));
     }
 
     Command * findCommand(byte code)
@@ -491,7 +508,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     commands.push_back(new NOP_Command(  0x00, 1,    4, "NOP"));
     commands.push_back(new JP_Command(   0xc3, 3,   16, "JP a16",  new MemoryReference<word, word>(this, pc)));
-    commands.push_back(new JP_Command(   0xe9, 1,    4, "JP (HL)", new MemoryReference<word, word>(this, hl)));
+    commands.push_back(new JP_Command(   0xe9, 1,    4, "JP (HL)", new RegisterReference<word>(hl)));
     commands.push_back(new XOR_Command(  0xaf, 1,    4, "XOR A", new RegisterReference<byte>(a)));
     commands.push_back(new XOR_Command(  0xa9, 1,    4, "XOR C", new RegisterReference<byte>(c)));
     commands.push_back(new LD_Command<word>( 0x21, 3,   12, "LD HL,d16",
@@ -603,10 +620,15 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new LD_Command<byte>( 0x12, 1, 8, "LD (DE),A",
                                                         new MemoryReference<byte, word>(this, de),
                                                         new RegisterReference<byte>(a)));
+    commands.push_back(new LD_Command<byte>( 0x1a, 1, 8, "LD A,(DE)",
+                                                        new RegisterReference<byte>(a),
+                                                        new MemoryReference<byte, word>(this, de)));
 
     commands.push_back(new PUSH_Command( 0xd5, 1, 16, "PUSH DE", new RegisterReference<word>(de)));
+    commands.push_back(new PUSH_Command( 0xe5, 1, 16, "PUSH HL", new RegisterReference<word>(hl)));
     commands.push_back(new PUSH_Command( 0xf5, 1, 16, "PUSH AF", new RegisterReference<word>(af)));
 
+    commands.push_back(new POP_Command(  0xd1, 1, 12, "POP DE", new RegisterReference<word>(de)));
     commands.push_back(new POP_Command(  0xe1, 1, 12, "POP HL", new RegisterReference<word>(hl)));
     commands.push_back(new POP_Command(  0xf1, 1, 12, "POP AF", new RegisterReference<word>(af)));
 
