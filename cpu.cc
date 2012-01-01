@@ -420,6 +420,17 @@ public:
     }
 };
 
+class RETI_Command : public Command {
+public:
+    RETI_Command(byte code, byte length, byte cycles, const char *mnemonic)
+        : Command(code, length, cycles, mnemonic) {};
+    void run(CPU *cpu) {
+        cpu->pc_lo = cpu->memory->get<byte>(cpu->sp++);
+        cpu->pc_hi = cpu->memory->get<byte>(cpu->sp++);
+        cpu->ime = 1;
+    }
+};
+
 class SET_IME_Command : public Command {
 private:
     byte value;
@@ -512,7 +523,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
       bc(registerBank[3]), b(registerBank[3].hi()), c(registerBank[3].lo()),
       de(registerBank[4]), d(registerBank[4].hi()), e(registerBank[4].lo()),
       hl(registerBank[5]), h(registerBank[5].hi()), l(registerBank[5].lo()),
-      ly(memory->getRef(0xff44))
+      ly(memory->getRef(0xff44)), IE(memory->getRef(0xffff)), IF(memory->getRef(0xff0f))
 {
     pc = 0x100;
     sp = 0xFFFE;
@@ -674,6 +685,8 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new ADD_Command<byte>( 0x87, 1, 4, "ADD A,A", new RegisterReference<byte>(a), new RegisterReference<byte>(a)));
 
     commands.push_back(new ADD_Command<word>( 0x19, 1, 8, "ADD HL,DE", new RegisterReference<word>(hl), new RegisterReference<word>(de)));
+
+    commands.push_back(new RETI_Command( 0xd9, 1, 16, "RETI"));
 }
 
 CPU::~CPU()
@@ -693,6 +706,22 @@ Command * CPU::findCommand(word address)
 
 void CPU::step()
 {
+    // Check for interrupts...
+    byte irqs = IE & IF;
+    if (ime && irqs) {
+        if (irqs & (INT_VBLANK+1))
+            callInterrupt(INT_VBLANK,  0x0040);
+        else if (irqs & (INT_LCDSTAT+1))
+            callInterrupt(INT_LCDSTAT, 0x0048);
+        else if (irqs & (INT_TIMER+1))
+            callInterrupt(INT_TIMER,   0x0050);
+        else if (irqs & (INT_SERIAL+1))
+            callInterrupt(INT_SERIAL,  0x0058);
+        else if (irqs & (INT_JOYPAD+1))
+            callInterrupt(INT_JOYPAD,  0x0060);
+    }
+
+    // Process command...
     Command * cmd = findCommand(pc);
     if (cmd) {
         debugger->handleInstruction(this, pc);
@@ -704,4 +733,27 @@ void CPU::step()
                 pc.value(), memory->get<byte>(pc));
         debugger->prompt(this);
     }
+}
+
+void CPU::callInterrupt(Interrupt irq, word address)
+{
+    // Reset interrupt flag in IF
+    IF &= ~(1 << irq);
+
+    // Reset IME
+    ime = 0;
+
+    // Push current PC on stack...
+    sp--;
+    memory->set(sp, pc_hi);
+    sp--;
+    memory->set(sp, pc_lo);
+
+    // Set new PC to interrupt address
+    pc = address;
+}
+
+void CPU::requestInterrupt(Interrupt irq)
+{
+    IF |= (1 << irq);
 }

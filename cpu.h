@@ -27,11 +27,22 @@ public:
 
 typedef std::vector<Command*> Commands;
 
+enum Interrupt
+{
+    INT_VBLANK    = 0,
+    INT_LCDSTAT   = 1,
+    INT_TIMER     = 2,
+    INT_SERIAL    = 3,
+    INT_JOYPAD    = 4
+};
+
 class CPU
 {
 private:
     word registerBank[6];
     Commands commands;
+
+    void callInterrupt(Interrupt irq, word address);
 
 public:
     Memory *memory;
@@ -46,7 +57,7 @@ public:
     word &bc; byte &b; byte &c;
     word &de; byte &d; byte &e;
     word &hl; byte &h; byte &l;
-    byte &ly;
+    byte &ly; byte &IE; byte &IF;
 
     inline const byte flagZ() { return f & (1 << 7); };
     inline const byte flagN() { return f & (1 << 6); };
@@ -63,6 +74,8 @@ public:
 
     void step();
     Command *findCommand(word address);
+
+    void requestInterrupt(Interrupt irq);
 };
 
 struct Condition { 

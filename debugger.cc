@@ -175,6 +175,7 @@ void Debugger::prompt(CPU *cpu)
             printf("\tD: %02x\tE: %02x\tDE: %04x\n", cpu->d, cpu->e, cpu->de.value());
             printf("\tH: %02x\tL: %02x\tHL: %04x\n", cpu->h, cpu->l, cpu->hl.value());
             printf("\tPC: %04x\tSP: %04x\n", cpu->pc.value(), cpu->sp.value());
+            printf("\n\tIE: %02x\tIF: %02x\tIME: %01x\n", cpu->IE, cpu->IF, cpu->ime);
             break;
         case 'i':
             printInstruction(cpu, cpu->pc);

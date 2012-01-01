@@ -126,6 +126,7 @@ static void idle()
             gb->cpu->ly = 0;
         } else if (gb->cpu->ly == 144) {
             /* vblank interrupt */
+            gb->cpu->requestInterrupt(INT_VBLANK);
         }
     }
 
