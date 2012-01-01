@@ -51,9 +51,21 @@ void Debugger::handleInstruction(CPU *cpu, word address)
 
 void Debugger::showMemory(CPU *cpu, word address)
 {
-    word start = address.value() - address.value() % 10;
-    for (word i = start; i < start+word(10*16); i++) {
-        if (i.value() % 10 == 0) {
+    const byte colcount = 8;
+    const byte rowcount = 16;
+    word base;
+    if (address.value() < (colcount*rowcount/2))
+        base = (colcount*rowcount/2);
+    else
+        base = address;
+    word start = base - (base.value() % colcount) - (colcount*(rowcount/2));
+    word end = start + word(colcount*rowcount)-1;
+    if (end < start)
+        end = 0xffff;
+
+    word i = start;
+    while (true) {
+        if (i.value() % colcount == 0) {
             printf("\n\t%04x", i.value());
         }
 
@@ -62,6 +74,9 @@ void Debugger::showMemory(CPU *cpu, word address)
         } else {
             printf(" %02x", cpu->memory->get<byte>(i));
         }
+        if (i == end)
+            break;
+        i++;
     }
     printf("\n");
 }
