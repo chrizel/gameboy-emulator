@@ -115,24 +115,24 @@ static void draw()
 static void idle()
 {
     int oldCycles = gb->cpu->cycles;
-    while ((gb->cpu->cycles - oldCycles) < 100) {
+    while ((gb->cpu->cycles - oldCycles) < 440) {
         // TODO: write joypad data
         gb->memory->set<byte>(0xff00, 0xff);
 
         gb->cpu->step();
-
-        gb->cpu->ly += 1;
-        if (gb->cpu->ly > 153) {
-            gb->cpu->ly = 0;
-        } else if (gb->cpu->ly == 144) {
-            /* vblank interrupt */
-            gb->cpu->requestInterrupt(INT_VBLANK);
-        }
     }
 
-    if (gb->cpu->cycles > 3000) {
-        gb->cpu->cycles = 0;
+    //printf("~ %d\n", gb->cpu->cycles);
+
+    gb->cpu->ly += 1;
+    if (gb->cpu->ly > 153) {
+        gb->cpu->ly = 0;
+    } else if (gb->cpu->ly == 144) {
+        /* vblank interrupt */
+        //printf("@ vblank\n");
+        gb->cpu->requestInterrupt(INT_VBLANK);
         glutPostRedisplay();
+        gb->cpu->cycles = 0;
     }
 }
 

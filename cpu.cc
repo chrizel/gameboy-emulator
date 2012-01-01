@@ -77,6 +77,23 @@ public:
 };
 
 template <class T>
+class Memory_a16_Reference : public Reference<T>
+{
+private:
+    CPU *cpu;
+    word &r;
+public:
+    Memory_a16_Reference(CPU *cpu, word &r): cpu(cpu), r(r) {};
+    virtual T get() {
+        return cpu->memory->get<T>( cpu->memory->get<word>(r) );
+    };
+    virtual void set(T v) {
+        cpu->memory->set<T>( cpu->memory->get<word>(r), v );
+    };
+};
+
+
+template <class T>
 class Memory_SingleRegister_Reference : public Reference<T>
 {
 private:
@@ -633,11 +650,11 @@ CPU::CPU(Memory *memory, Debugger *debugger)
                                                         new MemoryReference<byte>(this, hl),
                                                         new MemoryReference<byte>(this, pc)));
     commands.push_back(new LD_Command<byte>( 0xea, 3, 16, "LD (a16),A",
-                                                        new MemoryReference<byte>(this, pc),
+                                                        new Memory_a16_Reference<byte>(this, pc),
                                                         new RegisterReference<byte>(a)));
     commands.push_back(new LD_Command<byte>( 0xfa, 3, 16, "LD A,(a16)",
                                                         new RegisterReference<byte>(a),
-                                                        new MemoryReference<byte>(this, pc)));
+                                                        new Memory_a16_Reference<byte>(this, pc)));
     commands.push_back(new LD_Command<word>( 0x31, 3, 12, "LD SP,d16",
                                                         new RegisterReference<word>(sp),
                                                         new MemoryReference<word>(this, pc)));

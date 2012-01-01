@@ -32,9 +32,20 @@ Memory::~Memory()
     delete rom;
 }
 
+void Memory::dmaTransfer(byte b) {
+    byte c = 0x00;
+    while (c <= 0x9f) {
+        rom[word(c, 0xfe).value()] = rom[word(c, b).value()];
+        c++;
+    }
+}
+
 template <> void Memory::set<byte>(word address, byte b) {
     rom[address.value()] = b; 
     debugger->handleMemoryAccess(this, address, true);
+
+    if (address == 0xff46)
+        dmaTransfer(b);
 }
 
 template <> byte Memory::get<byte>(word address) {

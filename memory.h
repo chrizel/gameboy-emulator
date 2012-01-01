@@ -11,6 +11,8 @@ private:
     byte *rom;
     Debugger *debugger;
 
+    void dmaTransfer(byte b);
+
 public:
     Memory(const char *file, Debugger *debugger);
     virtual ~Memory();
