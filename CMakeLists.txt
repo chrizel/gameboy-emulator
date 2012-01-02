@@ -4,5 +4,9 @@ project(gb)
 find_package(GLUT)
 find_package(OpenGL)
 
-add_executable(gb cpu.cc debugger.cc gameboy.cc main.cc memory.cc)
-target_link_libraries(gb ${GLUT_LIBRARY} ${OPENGL_LIBRARY})
+#find_package(Boost 1.48.0)
+
+link_libraries(${GLUT_LIBRARY} ${OPENGL_LIBRARY})
+#include_directories(${Boost_INCLUDE_DIRS})
+
+add_executable(gb cpu.cc debugger.cc gameboy.cc main.cc memory.cc word.cc)

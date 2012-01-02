@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <string>
 
 #include <stdio.h>
@@ -163,14 +165,11 @@ static void idle()
         gb->cpu->step();
     }
 
-    //printf("~ %d\n", gb->cpu->cycles);
-
     gb->cpu->ly += 1;
     if (gb->cpu->ly > 153) {
         gb->cpu->ly = 0;
     } else if (gb->cpu->ly == 144) {
         /* vblank interrupt */
-        //printf("@ vblank\n");
         gb->cpu->requestInterrupt(INT_VBLANK);
         glutPostRedisplay();
         gb->cpu->cycles = 0;
@@ -180,7 +179,7 @@ static void idle()
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [sv] rom\n", argv[0]);
+        std::cerr << "Usage: " << argv[0] << " [sv] rom" << std::endl;
         return 1;
     }
 

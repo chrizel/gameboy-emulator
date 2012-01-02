@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +27,7 @@ public:
     ValueReference(T r): r(r) {};
     virtual T get() { return r; };
     virtual void set(T v) {
-        fprintf(stderr, "*** ValueReference can not be set\n");
+        std::cerr << "*** ValueReference can not be set" << std::endl;
     }
 };
 
@@ -858,7 +860,7 @@ CPU::CPU(Memory *memory, Debugger *debugger)
     commands.push_back(new RETI_Command( 0xd9, 1, 16, "RETI"));
     commands.push_back(new SCF_Command( 0x37, 1, 4, "SCF"));
 
-    printf("%lu commands\n", commands.size());
+    std::cout << commands.size() << " commands" << std::endl;
 }
 
 CPU::~CPU()
@@ -901,8 +903,7 @@ void CPU::step()
         cmd->run(this);
         cycles += cmd->cycles;
     } else {
-        fprintf(stderr, "%04x *** Unknown machine code: %02x\n", 
-                pc.value(), memory->get<byte>(pc));
+        std::cerr << pc << " *** Unknown machine code: " << memory->get<byte>(pc) << std::endl;
         debugger->prompt(this);
     }
 }

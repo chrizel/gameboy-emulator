@@ -1,11 +1,18 @@
 #include <algorithm>
+#include <iomanip>
+#include <string>
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "word.h"
 #include "cpu.h"
 #include "debugger.h"
+
+static const std::string CONSOLE_RED   = "\x1b[31m";
+static const std::string CONSOLE_GREEN = "\x1b[32m";
+static const std::string CONSOLE_RESET = "\x1b[0m";
 
 Debugger::Debugger() : verboseCPU(false), stepMode(true)
 {
@@ -15,10 +22,10 @@ void Debugger::toggleBreakpoint(word address)
 {
     Breakpoints::iterator it = std::find(breakpoints.begin(), breakpoints.end(), address);
     if(it == breakpoints.end()) {
-        printf("Set breakpoint %04x\n", address.value());
+        std::cout << "Set breakpoint " << address << std::endl;
         breakpoints.push_back(address);
     } else {
-        printf("Remove breakpoint %04x\n", address.value());
+        std::cout << "Remove breakpoint " << address << std::endl;
         breakpoints.erase(it);
     }
 }
@@ -26,11 +33,11 @@ void Debugger::toggleBreakpoint(word address)
 void Debugger::listBreakpoints()
 {
     if (breakpoints.empty()) {
-        printf("No breakpoints set\n");
+        std::cout << "No breakpoints set" << std::endl;
     } else {
-        printf("List breakpoints:\n");
+        std::cout << "List breakpoints:" << std::endl;
         for (Breakpoints::iterator it = breakpoints.begin(); it != breakpoints.end(); ++it) {
-            printf("\t%04x\n", (*it).value());
+            std::cout << '\t' << *it << std::endl;
         }
     }
 }
@@ -39,10 +46,10 @@ void Debugger::toggleWatch(word address)
 {
     Watches::iterator it = std::find(watches.begin(), watches.end(), address);
     if(it == watches.end()) {
-        printf("Set watch %04x\n", address.value());
+        std::cout << "Set watch " << address << std::endl;
         watches.push_back(address);
     } else {
-        printf("Remove watch %04x\n", address.value());
+        std::cout << "Remove watch " << address << std::endl;
         watches.erase(it);
     }
 }
@@ -50,11 +57,11 @@ void Debugger::toggleWatch(word address)
 void Debugger::listWatches()
 {
     if (watches.empty()) {
-        printf("No wathces set\n");
+        std::cout << "No watches set" << std::endl;
     } else {
-        printf("List watches:\n");
+        std::cout << "List watches:" << std::endl;
         for (Watches::iterator it = watches.begin(); it != watches.end(); ++it) {
-            printf("\t%04x\n", (*it).value());
+            std::cout << '\t' << *it << std::endl;
         }
     }
 }
@@ -65,7 +72,7 @@ void Debugger::handleInstruction(CPU *cpu, word address)
         printInstruction(cpu, address);
         prompt(cpu);
     } else if(std::find(breakpoints.begin(), breakpoints.end(), address) != breakpoints.end()) {
-        printf("Breakpoint at\n");
+        std::cout << "Breakpoint at" << std::endl;
         printInstruction(cpu, address);
         prompt(cpu);
     } else if (verboseCPU) {
@@ -83,9 +90,11 @@ void Debugger::handleMemoryAccess(Memory *memory, word address, bool set)
     Watches::iterator it = std::find(watches.begin(), watches.end(), address);
     if(verboseCPU || (it != watches.end())) {
         if (set) {
-            printf(" \x1b[31mset %04x to %02x\x1b[0m\n", address.value(), memory->get<byte>(address));
+            std::cout << CONSOLE_RED << " set " << address << " to " 
+                      << memory->get<byte>(address) << CONSOLE_RESET << std::endl;
         } else {
-            printf(" \x1b[32mget %04x -> %02x\x1b[0m\n", address.value(), memory->get<byte>(address));
+            std::cout << CONSOLE_GREEN << " mget " << address << " -> " 
+                      << memory->get<byte>(address) << CONSOLE_RESET << std::endl;
         }
     }
     inHandleMemoryAccess = false;
@@ -109,19 +118,19 @@ void Debugger::showMemory(CPU *cpu, word address)
     word i = start;
     while (true) {
         if (i.value() % colcount == 0) {
-            printf("\n\t%04x", i.value());
+            std::cout << std::endl << '\t' << i;
         }
 
         if (i == address) {
-            printf(" \x1b[31m%02x\x1b[0m", cpu->memory->get<byte>(i));
+            std::cout << " " << CONSOLE_RED << cpu->memory->get<byte>(i) << CONSOLE_RESET;
         } else {
-            printf(" %02x", cpu->memory->get<byte>(i));
+            std::cout << " " << cpu->memory->get<byte>(i);
         }
         if (i == end)
             break;
         i++;
     }
-    printf("\n");
+    std::cout << std::endl;
 }
 
 void Debugger::showStack(CPU *cpu)
@@ -131,9 +140,9 @@ void Debugger::showStack(CPU *cpu)
         start = 0xffff;
     for (word i = start; i >= cpu->sp; i--) {
         if (i == cpu->sp)
-            printf("\t\x1b[31m%04x %02x\x1b[0m\n", i.value(), cpu->memory->get<byte>(i));
+            std::cout << "\t" << CONSOLE_RED << i << " " << cpu->memory->get<byte>(i) << CONSOLE_RESET << std::endl;
         else
-            printf("\t%04x %02x\n", i.value(), cpu->memory->get<byte>(i));
+            std::cout << "\t" << i << " " << cpu->memory->get<byte>(i) << std::endl;
     }
 }
 
@@ -142,19 +151,19 @@ void Debugger::printInstruction(CPU *cpu, word address)
     word i = 0;
     Command * cmd = cpu->findCommand(address);
     if (cmd) {
-        printf("\t%04x\t", address.value());
+        std::cout << "\t" << address << "\t";
         for (i = 0; i < 3; i++) {
             if (i < cmd->length) {
-                printf("%02x ", cpu->memory->get<byte>(address+i));
+                std::cout << cpu->memory->get<byte>(address+i) << " ";
             } else {
-                printf("   ");
+                std::cout << "    ";
             }
         }
-        printf("\t%s\n", cmd->mnemonic);
+        std::cout << "\t" << cmd->mnemonic << std::endl;
         return;
     }
 
-    printf("\t%04x\tUnknown instruction: %02x\n", address.value(), cpu->memory->get<byte>(address));
+    std::cout << "\t" << address << "\tUnknown instruction: " << cpu->memory->get<byte>(address) << std::endl;
 }
 
 void Debugger::prompt(CPU *cpu)
@@ -163,19 +172,19 @@ void Debugger::prompt(CPU *cpu)
     char buf[64];
 
     while (!done) {
-        printf("> ");
-        fflush(stdout);
+        std::cout << "> " << std::flush;
         fgets(buf, 64, stdin);
         switch (buf[0]) {
         case 'q':
             exit(0);
         case 'r':
-            printf("\tA: %02x\tF: %02x\tAF: %04x\n", cpu->a, cpu->f, cpu->af.value());
-            printf("\tB: %02x\tC: %02x\tBC: %04x\n", cpu->b, cpu->c, cpu->bc.value());
-            printf("\tD: %02x\tE: %02x\tDE: %04x\n", cpu->d, cpu->e, cpu->de.value());
-            printf("\tH: %02x\tL: %02x\tHL: %04x\n", cpu->h, cpu->l, cpu->hl.value());
-            printf("\tPC: %04x\tSP: %04x\n", cpu->pc.value(), cpu->sp.value());
-            printf("\n\tIE: %02x\tIF: %02x\tIME: %01x\n", cpu->IE, cpu->IF, cpu->ime);
+            std::cout << "\tA: " << cpu->a << "\tF: " << cpu->f << "\tAF: " << cpu->af << std::endl
+                      << "\tB: " << cpu->b << "\tC: " << cpu->c << "\tBC: " << cpu->bc << std::endl
+                      << "\tD: " << cpu->d << "\tE: " << cpu->e << "\tDE: " << cpu->de << std::endl
+                      << "\tH: " << cpu->h << "\tL: " << cpu->l << "\tHL: " << cpu->hl << std::endl
+                      << "\tPC: " << cpu->pc << "\tSP: " << cpu->sp << std::endl
+                      << std::endl
+                      << "\tIE: " << cpu->IE << "\tIF: " << cpu->IF << "\tIME: " << cpu->ime << std::endl;
             break;
         case 'i':
             printInstruction(cpu, cpu->pc);
@@ -223,7 +232,7 @@ void Debugger::prompt(CPU *cpu)
             break;
         case 'v':
             verboseCPU = !verboseCPU;
-            printf("verbose cpu = %d\n", verboseCPU);
+            std::cout << "verbose cpu = " << verboseCPU << std::endl;
             break;
         case 's':
             showStack(cpu);
