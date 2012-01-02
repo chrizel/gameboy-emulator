@@ -332,9 +332,9 @@ template <>
 class INC_Command<byte> : public Command {
 private:
     Reference<byte> *ref;
-    byte value;
+    signed_byte value;
 public:
-    INC_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref, byte value)
+    INC_Command(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref, signed_byte value)
         : Command(code, length, cycles, mnemonic), ref(ref), value(value) {};
     virtual ~INC_Command() { delete ref; };
     void run(CPU *cpu) {
