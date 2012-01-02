@@ -69,6 +69,7 @@ static void draw()
     set_pixel(1, 1, 0);
     set_pixel(2, 2, 0);
 
+    // Draw background
     for (int row = 0; row < 32; row++) {
         for (int col = 0; col < 32; col++) {
             byte tile = gb->memory->get<byte>(0x9800 + (row * 32) + col);
@@ -87,6 +88,42 @@ static void draw()
                           + ((byte2 & (1 << x)) >> (x-1));
                     set_pixel((col * 8) + 7 - x, (row * 8) + y, i);
                 }
+            }
+        }
+    }
+
+    // Draw sprites
+    for (word sprite = 0xfe00; sprite <= 0xfe9f; sprite += 4) {
+        byte ypos = gb->memory->get<byte>(sprite);
+
+        // Sprite hidden via ypos?
+        if (ypos == 0 || ypos >= 160)
+            continue;
+
+        byte xpos = gb->memory->get<byte>(sprite+word(1));
+
+        // Sprite hidden via xpos?
+        if (xpos == 0 || xpos >= 168)
+            continue;
+
+        //TODO: Ordering priority
+
+        byte tile = gb->memory->get<byte>(sprite+word(2));
+        //byte attr = gb->memory->get<byte>(sprite+word(3));
+
+        for (int y = 0; y < 8; y++) {
+            int address = 0x8000 + (tile * 16) + (y * 2);
+            byte byte1 = gb->memory->get<byte>(address);
+            byte byte2 = gb->memory->get<byte>(address + 1);
+
+            for (int x = 0; x < 8; x++) {
+                int i;
+                if (x == 0)
+                    i = (byte1 & 1) + ((byte2 & 1) << 1);
+                else
+                    i = ((byte1 & (1 << x)) >> (x))
+                      + ((byte2 & (1 << x)) >> (x-1));
+                set_pixel((xpos - 8) + 7 - x, (ypos - 16) + y, i);
             }
         }
     }
