@@ -7,9 +7,9 @@
 
 class CPU;
 class Debugger;
-class Instruction;
 class Memory;
 class InstructionSet;
+struct Instruction;
 
 enum Interrupt
 {

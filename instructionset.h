@@ -6,7 +6,7 @@
 
 #include "word.h"
 
-class Instruction;
+struct Instruction;
 class CPU;
 
 typedef std::vector<Instruction*> Instructions;
