@@ -151,17 +151,17 @@ void Debugger::showStack(CPU *cpu)
 void Debugger::printInstruction(CPU *cpu, word address)
 {
     word i = 0;
-    Command * cmd = cpu->findCommand(address);
-    if (cmd) {
+    Instruction * instruction = cpu->findInstruction(address);
+    if (instruction) {
         std::cout << "\t" << address << "\t";
         for (i = 0; i < 3; i++) {
-            if (i < cmd->length) {
+            if (i < instruction->length) {
                 std::cout << cpu->memory->get<byte>(address+i) << " ";
             } else {
                 std::cout << "    ";
             }
         }
-        std::cout << "\t" << cmd->mnemonic << std::endl;
+        std::cout << "\t" << instruction->mnemonic << std::endl;
         return;
     }
 
@@ -213,9 +213,9 @@ void Debugger::prompt(CPU *cpu)
             word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
                 printInstruction(cpu, w);
-                Command *cmd = cpu->findCommand(w);
-                if (cmd) {
-                    w += cmd->length;
+                Instruction *instruction = cpu->findInstruction(w);
+                if (instruction) {
+                    w += instruction->length;
                 } else {
                     break;
                 }

@@ -7,10 +7,10 @@
 
 class CPU;
 class Debugger;
-class Command;
+class Instruction;
 class Memory;
 
-typedef std::vector<Command*> Commands;
+typedef std::vector<Instruction*> Instructions;
 
 enum Interrupt
 {
@@ -25,7 +25,7 @@ class CPU
 {
 private:
     word registerBank[6];
-    Commands commands;
+    Instructions instructions;
 
     void callInterrupt(Interrupt irq, word address);
 
@@ -58,7 +58,7 @@ public:
     virtual ~CPU();
 
     void step();
-    Command *findCommand(word address);
+    Instruction *findInstruction(word address);
 
     void requestInterrupt(Interrupt irq);
 };
