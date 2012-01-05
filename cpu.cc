@@ -62,8 +62,8 @@ void CPU::step()
             callInterrupt(INT_LCDSTAT, 0x0048);
         else if (irqs & (INT_TIMER+1))
             callInterrupt(INT_TIMER,   0x0050);
-        else if (irqs & (INT_SERIAL+1))
-            callInterrupt(INT_SERIAL,  0x0058);
+        //else if (irqs & (INT_SERIAL+1))
+        //    callInterrupt(INT_SERIAL,  0x0058);
         else if (irqs & (INT_JOYPAD+1))
             callInterrupt(INT_JOYPAD,  0x0060);
     }

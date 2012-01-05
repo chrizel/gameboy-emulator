@@ -32,7 +32,7 @@ static GLubyte colors[4][3] = {
 
 static void set_pixel(int x, int y, int color)
 {
-    if (x >= GB_DISPLAY_WIDTH || y >= GB_DISPLAY_HEIGHT || color > 3)
+    if (x < 0 || x >= GB_DISPLAY_WIDTH || y < 0 || y >= GB_DISPLAY_HEIGHT || color > 3)
         return;
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 0] = colors[color][0];
     screen[((y * GB_DISPLAY_WIDTH + x) * 3) + 1] = colors[color][1];
