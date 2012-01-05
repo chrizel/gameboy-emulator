@@ -23,6 +23,15 @@ static GameBoy *gb = 0;
 static GLubyte screen[GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3];
 static int zoom = 2;
 
+static bool key_right   = false;
+static bool key_left    = false;
+static bool key_up      = false;
+static bool key_down    = false;
+static bool key_a       = false;
+static bool key_b       = false;
+static bool key_select  = false;
+static bool key_start   = false;
+
 static GLubyte colors[4][3] = {
     {196, 207, 161},
     {139, 149, 109},
@@ -159,8 +168,16 @@ static void idle()
 {
     int oldCycles = gb->cpu->cycles;
     while ((gb->cpu->cycles - oldCycles) < 270) {
-        // TODO: write joypad data
-        gb->memory->set<byte>(0xff00, 0xff);
+        // write joypad data
+        byte b = gb->memory->get<byte>(0xff00);
+        if (~b & (1 << 5)) {
+            b = (b & 0xf0) | ~((key_a << 0) | (key_b << 1) | (key_select << 2) | (key_start << 3));
+        } else if (~b && (1 << 4)) {
+            b = (b & 0xf0) | ~((key_right << 0) | (key_left << 1) | (key_up << 2) | (key_down << 3));
+        } else {
+            b |= 0x0f;
+        }
+        gb->memory->set<byte>(0xff00, b);
 
         gb->cpu->step();
     }
@@ -175,6 +192,30 @@ static void idle()
         glutPostRedisplay();
         gb->cpu->cycles = 0;
     }
+}
+
+void set_key(unsigned char key, bool down)
+{
+    switch (key) {
+    case 'd': key_right = down; break;
+    case 'a': key_left = down; break;
+    case 'w': key_up = down; break;
+    case 's': key_down = down; break;
+    case 'o': key_a = down; break;
+    case 'p': key_b = down; break;
+    case 'u': key_select = down; break;
+    case 'i': key_start = down; break;
+    }
+}
+
+void keyDown(unsigned char key, int x, int y)
+{
+    set_key(key, true);
+}
+
+void keyUp(unsigned char key, int x, int y)
+{
+    set_key(key, false);
 }
 
 int main(int argc, char *argv[])
@@ -205,6 +246,8 @@ int main(int argc, char *argv[])
     glutDisplayFunc(draw);
 
     glutIdleFunc(idle);
+    glutKeyboardFunc(keyDown);
+    glutKeyboardUpFunc(keyUp);
 
     glutMainLoop();
 
