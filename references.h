@@ -2,6 +2,7 @@
 #define REFERENCES_H
 
 #include "cpu.h"
+#include "memory.h"
 
 template <class T>
 class Reference

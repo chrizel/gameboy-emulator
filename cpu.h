@@ -9,8 +9,7 @@ class CPU;
 class Debugger;
 class Instruction;
 class Memory;
-
-typedef std::vector<Instruction*> Instructions;
+class InstructionSet;
 
 enum Interrupt
 {
@@ -25,7 +24,7 @@ class CPU
 {
 private:
     word registerBank[6];
-    Instructions instructions;
+    InstructionSet *instructionSet;
 
     void callInterrupt(Interrupt irq, word address);
 

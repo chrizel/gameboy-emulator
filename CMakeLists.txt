@@ -5,6 +5,7 @@ set(SOURCE
     cpu.cc
     debugger.cc
     gameboy.cc
+    instructionset.cc
     main.cc
     memory.cc
     word.cc
@@ -15,6 +16,7 @@ set(HEADERS
     debugger.h
     gameboy.h
     instructions.h
+    instructionset.h
     memory.h
     references.h
     word.h

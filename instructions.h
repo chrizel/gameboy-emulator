@@ -3,6 +3,9 @@
 
 #include "cpu.h"
 #include "references.h"
+#include "instructionset.h"
+#include "memory.h"
+#include "debugger.h"
 
 class Instruction
 {
