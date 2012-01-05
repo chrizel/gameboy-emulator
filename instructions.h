@@ -310,17 +310,16 @@ public:
 
 class RST_Instruction : public Instruction {
 private:
-    Reference<byte> *ref;
+    byte b;
 public:
-    RST_Instruction(byte code, byte length, byte cycles, const char *mnemonic, Reference<byte> *ref)
-        : Instruction(code, length, cycles, mnemonic), ref(ref) {};
-    virtual ~RST_Instruction() { delete ref; };
+    RST_Instruction(byte code, byte length, byte cycles, const char *mnemonic, byte b)
+        : Instruction(code, length, cycles, mnemonic), b(b) {};
     void run(CPU *cpu) {
         cpu->sp--;
         cpu->memory->set(cpu->sp, cpu->pc_hi);
         cpu->sp--;
         cpu->memory->set(cpu->sp, cpu->pc_lo);
-        cpu->pc = word(ref->get(), 0x00);
+        cpu->pc = word(b, 0x00);
     }
 };
 

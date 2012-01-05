@@ -14,19 +14,6 @@ public:
 };
 
 template <class T>
-class ValueReference : public Reference<T>
-{
-private:
-    T r;
-public:
-    ValueReference(T r): r(r) {};
-    virtual T get() { return r; };
-    virtual void set(T v) {
-        std::cerr << "*** ValueReference can not be set" << std::endl;
-    }
-};
-
-template <class T>
 class RegisterReference : public Reference<T>
 {
 private:

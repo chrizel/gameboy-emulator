@@ -201,7 +201,7 @@ InstructionSet::InstructionSet(CPU *cpu)
 
     instructions.push_back(new CB_Instruction( 0xcb, 1, 0, "CB", cpu));
 
-    instructions.push_back(new RST_Instruction( 0xef, 1, 16, "RST 28H", new ValueReference<byte>(0x28)));
+    instructions.push_back(new RST_Instruction( 0xef, 1, 16, "RST 28H", 0x28));
 
     instructions.push_back(new ADD_Instruction<byte>( 0x87, 1, 4, "ADD A,A", new RegisterReference<byte>(cpu->a), new RegisterReference<byte>(cpu->a)));
     instructions.push_back(new ADD_Instruction<byte>( 0x85, 1, 4, "ADD A,L", new RegisterReference<byte>(cpu->a), new RegisterReference<byte>(cpu->l)));
