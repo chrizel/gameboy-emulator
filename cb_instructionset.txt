@@ -1,0 +1,15 @@
+27  2   8       SLA A
+33  2   8       SWAP E
+37  2   8       SWAP A
+3f  2   8       SRL A
+40  2   8       BIT 0,B
+48  2   8       BIT 1,B
+50  2   8       BIT 2,B
+58  2   8       BIT 3,B
+5f  2   8       BIT 3,A
+60  2   8       BIT 4,B
+68  2   8       BIT 5,B
+7e  2   16      BIT 7,(HL)
+7f  2   8       BIT 7,A
+86  2   16      RES 0,(HL)
+87  2   8       RES 0,A

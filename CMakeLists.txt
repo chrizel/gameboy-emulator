@@ -5,6 +5,7 @@ set(SOURCE
     cpu.cc
     debugger.cc
     gameboy.cc
+    instructions.cc
     instructionset.cc
     main.cc
     memory.cc
@@ -26,9 +27,22 @@ source_group("Headers" FILES ${HEADERS})
 
 find_package(GLUT)
 find_package(OpenGL)
-#find_package(Boost 1.48.0)
+find_package(Boost 1.48.0)
 
 link_libraries(${GLUT_LIBRARY} ${OPENGL_LIBRARY})
-#include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(gb ${SOURCE} ${HEADERS})
+add_custom_command(
+    OUTPUT base_instructionset.h
+    COMMAND instructionset_generator ${CMAKE_CURRENT_SOURCE_DIR}/base_instructionset.txt ${CMAKE_CURRENT_BINARY_DIR}/base_instructionset.h
+    DEPENDS instructionset_generator ${CMAKE_CURRENT_SOURCE_DIR}/base_instructionset.txt
+)
+
+add_custom_command(
+    OUTPUT cb_instructionset.h
+    COMMAND instructionset_generator ${CMAKE_CURRENT_SOURCE_DIR}/cb_instructionset.txt ${CMAKE_CURRENT_BINARY_DIR}/cb_instructionset.h
+    DEPENDS instructionset_generator ${CMAKE_CURRENT_SOURCE_DIR}/cb_instructionset.txt
+)
+
+add_executable(gb ${SOURCE} ${HEADERS} base_instructionset.h cb_instructionset.h)
+add_executable(instructionset_generator instructionset_generator.cc)

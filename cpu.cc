@@ -11,6 +11,7 @@
 #include "instructions.h"
 #include "instructionset.h"
 #include "references.h"
+#include "base_instructionset.h"
 
 CPU::CPU(Memory *memory, Debugger *debugger)
     : memory(memory),
@@ -36,7 +37,8 @@ CPU::CPU(Memory *memory, Debugger *debugger)
 
     ly = 0x00;
 
-    instructionSet = new InstructionSet(this);
+    instructionSet = new InstructionSet();
+    initialize_base_instructionset(instructionSet, this);
 }
 
 CPU::~CPU()
@@ -71,8 +73,18 @@ void CPU::step()
     if (cmd) {
         debugger->handleInstruction(this, pc);
         pc++;
-        cmd->run(this);
-        cycles += cmd->cycles;
+        if (cmd->condition) {
+            if ((*cmd->condition)(this)) {
+                cmd->run();
+                cycles += cmd->cycles0;
+            } else {
+                cycles += cmd->cycles1;
+                pc += cmd->length-1;
+            }
+        } else {
+            cmd->run();
+            cycles += cmd->cycles0;
+        }
     } else {
         std::cerr << pc << " *** Unknown machine code: " << memory->get<byte>(pc) << std::endl;
         debugger->prompt(this);

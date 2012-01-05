@@ -17,10 +17,11 @@ private:
     Instructions instructions;
 
 public:
-    InstructionSet(CPU *cpu);
+    InstructionSet();
     ~InstructionSet();
 
     Instruction * findInstruction(byte code);
+    void add(Instruction *instruction);
 };
 
 #endif
