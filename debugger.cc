@@ -189,26 +189,24 @@ void Debugger::prompt(CPU *cpu)
         case 'i':
             printInstruction(cpu, cpu->pc);
             break;
-        case 'b': {
-            word w;
+        case 'b':
             if (strlen(buf) < 4) {
                 listBreakpoints();
             } else {
-                sscanf(buf, "b %04x", &w.d.w);
-                toggleBreakpoint(w);
+                int v;
+                sscanf(buf, "b %04x", &v);
+                toggleBreakpoint(v);
             }
             break;
-        }
-        case 'w': {
-            word w;
+        case 'w':
             if (strlen(buf) < 4) {
                 listWatches();
             } else {
-                sscanf(buf, "w %04x", &w.d.w);
-                toggleWatch(w);
+                int v;
+                sscanf(buf, "w %04x", &v);
+                toggleWatch(v);
             }
             break;
-        }
         case 'p': {
             word w = cpu->pc;
             for (int i = 0; i < 16; i++) {
@@ -238,9 +236,9 @@ void Debugger::prompt(CPU *cpu)
             showStack(cpu);
             break;
         case 'm': {
-            word w;
-            sscanf(buf, "m %04x", &w.d.w);
-            showMemory(cpu, w);
+            int v;
+            sscanf(buf, "m %04x", &v);
+            showMemory(cpu, v);
             break;
         }
         case 'h':
