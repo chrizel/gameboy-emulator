@@ -1,26 +1,27 @@
+#include <cstring>
+
 #include "cpu.h"
 #include "instructions.h"
 #include "instructionset.h"
 
 InstructionSet::InstructionSet()
 {
+    memset(instructions, 0, 256);
 }
 
 void InstructionSet::add(Instruction *instruction)
 {
-    instructions.push_back(instruction);
+    instructions[instruction->code] = instruction;
 }
 
 InstructionSet::~InstructionSet()
 {
-    for (Instructions::iterator i = instructions.begin(); i != instructions.end(); ++i)
-        delete *i;
+    for (int i = 0; i < 256; ++i)
+        if (instructions[i])
+            delete instructions[i];
 }
 
 Instruction * InstructionSet::findInstruction(byte code)
 {
-    for (Instructions::iterator i = instructions.begin(); i != instructions.end(); ++i)
-        if ((*i)->code == code)
-            return *i;
-    return 0;
+    return instructions[code];
 }
