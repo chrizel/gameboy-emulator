@@ -66,10 +66,34 @@ static void draw()
     glClear(GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GB_DISPLAY_WIDTH, GB_DISPLAY_HEIGHT,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, screen);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glEnable(GL_TEXTURE_2D);
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(0.0f, 0.0f);
+
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(1.0f, 0.0f);
+
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(1.0f, 1.0f);
+
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(0.0f, 1.0f);
+    glEnd();
+
+    glFlush();
+}
+
+static void fillScreen()
+{
     memset(screen, 0, GB_DISPLAY_WIDTH * GB_DISPLAY_HEIGHT * 3);
-    set_pixel(0, 0, 0);
-    set_pixel(1, 1, 0);
-    set_pixel(2, 2, 0);
 
     // Draw background
     for (int row = 0; row < 32; row++) {
@@ -129,30 +153,6 @@ static void draw()
             }
         }
     }
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GB_DISPLAY_WIDTH, GB_DISPLAY_HEIGHT,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, screen);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glEnable(GL_TEXTURE_2D);
-
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f);
-        glVertex2f(0.0f, 0.0f);
-
-        glTexCoord2f(1.0f, 0.0f);
-        glVertex2f(1.0f, 0.0f);
-
-        glTexCoord2f(1.0f, 1.0f);
-        glVertex2f(1.0f, 1.0f);
-
-        glTexCoord2f(0.0f, 1.0f);
-        glVertex2f(0.0f, 1.0f);
-    glEnd();
-
-    glFlush();
 }
 
 static void idle()
@@ -171,6 +171,7 @@ static void idle()
     } else if (gb->cpu->ly == 144) {
         /* vblank interrupt */
         gb->cpu->requestInterrupt(INT_VBLANK);
+        fillScreen();
         glutPostRedisplay();
         gb->cpu->cycles = 0;
     }

@@ -14,9 +14,10 @@
 
 static const std::string CONSOLE_RED   = "\x1b[31m";
 static const std::string CONSOLE_GREEN = "\x1b[32m";
+static const std::string CONSOLE_BLUE  = "\x1b[34m";
 static const std::string CONSOLE_RESET = "\x1b[0m";
 
-Debugger::Debugger() : verboseCPU(false), stepMode(true)
+Debugger::Debugger() : verboseCPU(false), verboseMemory(false), stepMode(true)
 {
 }
 
@@ -85,12 +86,12 @@ void Debugger::handleInstruction(CPU *cpu, word address)
 void Debugger::handleMemoryAccess(Memory *memory, word address, bool set)
 {
     static bool inHandleMemoryAccess = false;
-    if (inHandleMemoryAccess || (!verboseCPU && watches.empty()))
+    if (inHandleMemoryAccess || (!verboseMemory && watches.empty()))
         return;
 
     inHandleMemoryAccess = true;
     Watches::iterator it = std::find(watches.begin(), watches.end(), address);
-    if(verboseCPU || (it != watches.end())) {
+    if(verboseMemory || (it != watches.end())) {
         if (set) {
             std::cout << CONSOLE_RED << " set " << address << " to " 
                       << memory->get<byte>(address) << CONSOLE_RESET << std::endl;
@@ -100,6 +101,14 @@ void Debugger::handleMemoryAccess(Memory *memory, word address, bool set)
         }
     }
     inHandleMemoryAccess = false;
+}
+
+void Debugger::handleInterrupt(int irq, word address)
+{
+    if (!verboseCPU)
+        return;
+
+    std::cout << CONSOLE_BLUE << "interrupt " << irq << " (" << address << ")" << CONSOLE_RESET << std::endl;
 }
 
 void Debugger::showMemory(CPU *cpu, word address)
@@ -234,6 +243,10 @@ void Debugger::prompt(CPU *cpu)
             verboseCPU = !verboseCPU;
             std::cout << "verbose cpu = " << verboseCPU << std::endl;
             break;
+        case 'u':
+            verboseMemory = !verboseMemory;
+            std::cout << "verbose memory = " << verboseMemory << std::endl;
+            break;
         case 's':
             showStack(cpu);
             break;
@@ -254,6 +267,7 @@ void Debugger::prompt(CPU *cpu)
             puts("q - quit");
             puts("r - print registers");
             puts("s - show stack");
+            puts("u - toggle verbose memory");
             puts("v - toggle verbose cpu");
             puts("w - list/toggle watch(es)");
             break;

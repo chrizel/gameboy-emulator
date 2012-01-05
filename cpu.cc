@@ -107,6 +107,8 @@ void CPU::callInterrupt(Interrupt irq, word address)
 
     // Set new PC to interrupt address
     pc = address;
+
+    debugger->handleInterrupt(irq, address);
 }
 
 void CPU::requestInterrupt(Interrupt irq)

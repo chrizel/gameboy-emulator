@@ -17,12 +17,13 @@ private:
     Watches watches;
 
 public:
-    bool verboseCPU, stepMode;
+    bool verboseCPU, verboseMemory, stepMode;
 
     Debugger();
 
     void handleInstruction(CPU *cpu, word address);
     void handleMemoryAccess(Memory *memory, word address, bool set);
+    void handleInterrupt(int irq, word address);
 
     void toggleBreakpoint(word address);
     void listBreakpoints();

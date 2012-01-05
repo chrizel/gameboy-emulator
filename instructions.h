@@ -175,23 +175,25 @@ struct ADD_Instruction : public ReferenceInstruction<T> {
 template <>
 struct ADD_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        byte v = ref0->get() + ref1->get();
+        byte x = ref0->get();
+        byte v = x + ref1->get();
         ref0->set(v);
         cpu->flagZ(v == 0);
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(0); // TODO: carry flag
+        cpu->flagC(v < x); // TODO: carry flag
     }
 };
 
 template <>
 struct ADD_Instruction<word> : public ReferenceInstruction<word> {
     void run() {
-        word v = ref0->get() + ref1->get();
+        word x = ref0->get();
+        word v = x + ref1->get();
         ref0->set(v);
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(0); // TODO: carry flag
+        cpu->flagC(v < x); // TODO: carry flag
     }
 };
 
@@ -246,10 +248,12 @@ struct CP_Instruction : public ReferenceInstruction<T> {
 template <>
 struct CP_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        cpu->flagZ(ref0->get() == cpu->a);
+        byte a = cpu->a;
+        byte n = ref0->get();
+        cpu->flagZ(a == n);
         cpu->flagN(1);
         cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(0); // TODO: carry flag
+        cpu->flagC(a < n); // TODO: carry flag
         cpu->pc += length-1;
     }
 };
