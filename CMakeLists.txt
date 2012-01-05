@@ -14,7 +14,9 @@ set(HEADERS
     cpu.h
     debugger.h
     gameboy.h
+    instructions.h
     memory.h
+    references.h
     word.h
 )
 

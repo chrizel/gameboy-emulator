@@ -9,6 +9,8 @@
 #include "word.h"
 #include "cpu.h"
 #include "debugger.h"
+#include "memory.h"
+#include "instructions.h"
 
 static const std::string CONSOLE_RED   = "\x1b[31m";
 static const std::string CONSOLE_GREEN = "\x1b[32m";

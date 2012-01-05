@@ -4,26 +4,11 @@
 #include <vector>
 
 #include "word.h"
-#include "memory.h"
 
 class CPU;
 class Debugger;
-
-class Command
-{
-public:
-    byte code;
-    byte length;
-    byte cycles;
-    const char *mnemonic;
-    Command(byte code, byte length, byte cycles, const char *mnemonic) :
-        code(code),
-        length(length),
-        cycles(cycles),
-        mnemonic(mnemonic) {};
-    virtual ~Command() {};
-    virtual void run(CPU *cpu) = 0;
-};
+class Command;
+class Memory;
 
 typedef std::vector<Command*> Commands;
 
