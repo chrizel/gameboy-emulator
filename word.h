@@ -6,55 +6,46 @@
 
 typedef uint8_t byte;
 typedef int8_t signed_byte;
+typedef uint16_t word_t;
 
 struct word {
-public:
+private:
     union {
-        uint16_t w;
+        word_t w;
         struct {
             byte lo;
             byte hi;
         } b;
     } d;
 
-    word(uint16_t v = 0) { d.w = v; };
+public:
+    word(word_t v = 0) { d.w = v; };
     word(byte lo, byte hi) { d.b.lo = lo; d.b.hi = hi; };
 
-    inline byte & lo() { return d.b.lo; };
-    inline byte & hi() { return d.b.hi; };
-    inline uint16_t & value() { return d.w; };
+    inline byte & loRef() { return d.b.lo; };
+    inline byte & hiRef() { return d.b.hi; };
 
     inline byte lo() const { return d.b.lo; };
     inline byte hi() const { return d.b.hi; };
-    inline uint16_t value() const { return d.w; };
+    inline word_t value() const { return d.w; };
 
     inline void setlo(byte v) { d.b.lo = v; };
     inline void sethi(byte v) { d.b.hi = v; };
 
-    operator uint16_t() const {
-        return d.w;
-    };
-
-    word operator+(const word &w) {
-        return word(d.w + w.d.w);
-    };
-
-    word operator+=(const word &w) {
-        d.w += w.d.w;
-        return *this;
-    };
+    word operator+(const word &w) const { return word(d.w + w.d.w); };
+    word operator-(const word &w) const { return word(d.w - w.d.w); };
+    bool operator<(const word &w) const { return d.w < w.d.w; };
+    bool operator>=(const word &w) const { return d.w >= w.d.w; };
+    bool operator<=(const word &w) const { return d.w <= w.d.w; };
+    bool operator==(const word &w) const { return d.w == w.d.w; };
+    word operator+=(const word &w) { d.w += w.d.w; return *this; };
+    word operator++(int) { return word(d.w++); };
+    word operator--(int) { return word(d.w--); };
 
     void addSignedByte(const byte &b) {
         d.w = d.w + (int8_t)b;
     };
 
-    word operator++(int) {
-        return word(d.w++);
-    };
-
-    word operator--(int) {
-        return word(d.w--);
-    };
 };
 
 std::ostream & operator<<(std::ostream &cout, byte b);

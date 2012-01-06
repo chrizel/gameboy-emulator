@@ -18,12 +18,12 @@ CPU::CPU(Memory *memory, Debugger *debugger)
       debugger(debugger),
       ime(1),
       cycles(0),
-      pc(registerBank[0]), pc_hi(registerBank[0].hi()), pc_lo(registerBank[0].lo()),
+      pc(registerBank[0]), pc_hi(registerBank[0].hiRef()), pc_lo(registerBank[0].loRef()),
       sp(registerBank[1]),
-      af(registerBank[2]), a(registerBank[2].hi()), f(registerBank[2].lo()),
-      bc(registerBank[3]), b(registerBank[3].hi()), c(registerBank[3].lo()),
-      de(registerBank[4]), d(registerBank[4].hi()), e(registerBank[4].lo()),
-      hl(registerBank[5]), h(registerBank[5].hi()), l(registerBank[5].lo()),
+      af(registerBank[2]), a(registerBank[2].hiRef()), f(registerBank[2].loRef()),
+      bc(registerBank[3]), b(registerBank[3].hiRef()), c(registerBank[3].loRef()),
+      de(registerBank[4]), d(registerBank[4].hiRef()), e(registerBank[4].loRef()),
+      hl(registerBank[5]), h(registerBank[5].hiRef()), l(registerBank[5].loRef()),
       ly(memory->getRef(0xff44)), IE(memory->getRef(0xffff)), IF(memory->getRef(0xff0f))
 {
     pc = 0x100;
@@ -62,8 +62,8 @@ void CPU::step()
             callInterrupt(INT_LCDSTAT, 0x0048);
         else if (irqs & (INT_TIMER+1))
             callInterrupt(INT_TIMER,   0x0050);
-        //else if (irqs & (INT_SERIAL+1))
-        //    callInterrupt(INT_SERIAL,  0x0058);
+        else if (irqs & (INT_SERIAL+1))
+            callInterrupt(INT_SERIAL,  0x0058);
         else if (irqs & (INT_JOYPAD+1))
             callInterrupt(INT_JOYPAD,  0x0060);
     }

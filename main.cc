@@ -171,9 +171,9 @@ static void idle()
         // write joypad data
         byte b = gb->memory->get<byte>(0xff00);
         if (~b & (1 << 5)) {
-            b = (b & 0xf0) | ~((key_a << 0) | (key_b << 1) | (key_select << 2) | (key_start << 3));
-        } else if (~b && (1 << 4)) {
-            b = (b & 0xf0) | ~((key_right << 0) | (key_left << 1) | (key_up << 2) | (key_down << 3));
+            b = (b & 0x00) | ~((key_a << 0) | (key_b << 1) | (key_select << 2) | (key_start << 3));
+        } else if (~b & (1 << 4)) {
+            b = (b & 0x00) | ~((key_right << 0) | (key_left << 1) | (key_up << 2) | (key_down << 3));
         } else {
             b |= 0x0f;
         }

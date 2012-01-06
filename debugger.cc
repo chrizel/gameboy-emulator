@@ -12,10 +12,11 @@
 #include "memory.h"
 #include "instructions.h"
 
-static const std::string CONSOLE_RED   = "\x1b[31m";
-static const std::string CONSOLE_GREEN = "\x1b[32m";
-static const std::string CONSOLE_BLUE  = "\x1b[34m";
-static const std::string CONSOLE_RESET = "\x1b[0m";
+static const bool CONSOLE_COLORS = false;
+static const std::string CONSOLE_RED   = CONSOLE_COLORS ? "\x1b[31m" : "";
+static const std::string CONSOLE_GREEN = CONSOLE_COLORS ? "\x1b[32m" : "";
+static const std::string CONSOLE_BLUE  = CONSOLE_COLORS ? "\x1b[34m" : "";
+static const std::string CONSOLE_RESET = CONSOLE_COLORS ? "\x1b[0m"  : "";
 
 Debugger::Debugger() : verboseCPU(false), verboseMemory(false), stepMode(true)
 {
