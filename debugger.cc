@@ -12,7 +12,12 @@
 #include "memory.h"
 #include "instructions.h"
 
+#ifdef WIN32
 static const bool CONSOLE_COLORS = false;
+#else
+static const bool CONSOLE_COLORS = true;
+#endif
+
 static const std::string CONSOLE_RED   = CONSOLE_COLORS ? "\x1b[31m" : "";
 static const std::string CONSOLE_GREEN = CONSOLE_COLORS ? "\x1b[32m" : "";
 static const std::string CONSOLE_BLUE  = CONSOLE_COLORS ? "\x1b[34m" : "";

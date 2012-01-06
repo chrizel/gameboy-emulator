@@ -63,8 +63,8 @@ public:
 };
 
 struct Condition { virtual bool operator()(CPU *cpu) const = 0; };
-struct Z_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagZ(); }; };
-struct C_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagC(); }; };
+struct Z_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagZ() != 0; }; };
+struct C_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagC() != 0; }; };
 struct NZ_Condition : Condition { virtual bool operator()(CPU *cpu) const { return !cpu->flagZ(); }; };
 struct NC_Condition : Condition { virtual bool operator()(CPU *cpu) const { return !cpu->flagC(); }; };
 

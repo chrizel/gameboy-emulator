@@ -25,12 +25,12 @@ set(HEADERS
 
 source_group("Headers" FILES ${HEADERS})
 
-find_package(GLUT)
-find_package(OpenGL)
-find_package(Boost 1.48.0)
+find_package(Boost 1.47.0 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
 
-link_libraries(${GLUT_LIBRARY} ${OPENGL_LIBRARY})
-include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+link_libraries(${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${OPENGL_LIBRARY})
+include_directories(${OPENGL_INCLUDE_DIR} ${GLUT_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_custom_command(
     OUTPUT base_instructionset.h

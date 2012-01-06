@@ -2,15 +2,16 @@
 
 #include <string>
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #if defined(__APPLE__)
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
+#endif
+
+#ifndef GL_CLAMP_TO_EDGE // Not defined in Microsofts ancient headers
+#define GL_CLAMP_TO_EDGE 0x812F
 #endif
 
 #include "gameboy.h"
