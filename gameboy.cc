@@ -112,9 +112,9 @@ bool GameBoy::process()
         // write joypad data
         byte b = memory->get<byte>(0xff00);
         if (~b & (1 << 5)) {
-            b = (b & 0x00) | (0x0f & ~(0x0f & (buttons >> 4)));
+            b = (b & 0xf0) | (0x0f & ~(0x0f & (buttons >> 4)));
         } else if (~b & (1 << 4)) {
-            b = (b & 0x00) | (0x0f & ~(0x0f & buttons));
+            b = (b & 0xf0) | (0x0f & ~(0x0f & buttons));
         } else {
             b |= 0x0f;
         }
