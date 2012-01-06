@@ -6,7 +6,7 @@
 
 InstructionSet::InstructionSet()
 {
-    memset(instructions, 0, 256);
+    memset(instructions, 0, sizeof(Instruction *) * 256);
 }
 
 void InstructionSet::add(Instruction *instruction)
