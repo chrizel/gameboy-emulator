@@ -13,3 +13,4 @@
 7f  2   8       BIT 7,A
 86  2   16      RES 0,(HL)
 87  2   8       RES 0,A
+bf  2   8       RES 7,A

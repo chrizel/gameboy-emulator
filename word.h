@@ -35,6 +35,7 @@ public:
     word operator+(const word &w) const { return word(d.w + w.d.w); };
     word operator-(const word &w) const { return word(d.w - w.d.w); };
     bool operator<(const word &w) const { return d.w < w.d.w; };
+    bool operator>(const word &w) const { return d.w > w.d.w; };
     bool operator>=(const word &w) const { return d.w >= w.d.w; };
     bool operator<=(const word &w) const { return d.w <= w.d.w; };
     bool operator==(const word &w) const { return d.w == w.d.w; };

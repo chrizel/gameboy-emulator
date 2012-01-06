@@ -93,7 +93,21 @@ struct RLCA_Instruction : public Instruction {
         cpu->a = cpu->a << 1;
         cpu->a = bit7 ? (cpu->a | 1) : (cpu->a & ~1);
 
-        cpu->flagZ(0);
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagH(0);
+        cpu->flagN(0);
+        cpu->flagC(bit7);
+    }
+};
+
+struct RLA_Instruction : public Instruction {
+    void run() {
+        byte bit7 = cpu->a & (1 << 7);
+        byte cf = cpu->flagC() ? 1 : 0;
+        cpu->a = cpu->a << 1;
+        cpu->a = cf ? (cpu->a | 1) : (cpu->a & ~1);
+
+        cpu->flagZ(cpu->a == 0);
         cpu->flagH(0);
         cpu->flagN(0);
         cpu->flagC(bit7);
@@ -194,6 +208,22 @@ struct ADD_Instruction<word> : public ReferenceInstruction<word> {
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(v < x); // TODO: carry flag
+    }
+};
+
+template <class T>
+struct SUB_Instruction : public ReferenceInstruction<T> {
+};
+
+template <>
+struct SUB_Instruction<byte> : public ReferenceInstruction<byte> {
+    void run() {
+        byte b = ref0->get();
+        cpu->a = cpu->a - b;
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagN(1);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(cpu->a < b); // TODO: carry flag / "Set if no borrow"
     }
 };
 

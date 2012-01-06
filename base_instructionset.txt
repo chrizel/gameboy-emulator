@@ -15,6 +15,7 @@
 12  1   8       LD (DE),A
 13  1   8       INC DE
 16  2   8       LD D,d8
+17  1   4       RLA
 18  2   12      JR r8
 19  1   8       ADD HL,DE
 1a  1   8       LD A,(DE)
@@ -37,11 +38,13 @@
 35  1   12      DEC (HL)
 36  2   12      LD (HL),d8
 37  1   4       SCF
+39  1   8       ADD HL,SP
 3a  1   8       LD A,(HL-)
 3c  1   4       INC A
 3d  1   4       DEC A
 3e  2   8       LD A,d8
 40  1   4       LD B,B
+41  1   4       LD B,C
 46  1   8       LD B,(HL)
 47  1   4       LD B,A
 4e  1   8       LD C,(HL)
@@ -71,6 +74,7 @@
 7e  1   8       LD A,(HL)
 85  1   4       ADD A,L
 87  1   4       ADD A,A
+95  1   4       SUB L
 a1  1   4       AND C
 a7  1   4       AND A
 a9  1   4       XOR C
@@ -89,11 +93,13 @@ c9  1   16      RET
 ca  3   16/12   JP Z,a16
 cb  1   0       CB
 cd  3   24      CALL a16
+cf  1   16      RST 16H
 d0  1   20/8    RET NC
 d1  1   12      POP DE
 d5  1   16      PUSH DE
 d8  1   20/8    RET C
 d9  1   16      RETI
+dc  3   24/12   CALL C,a16
 e0  2   12      LD (a8),A
 e1  1   12      POP HL
 e2  1   8       LD (C),A
@@ -110,3 +116,4 @@ f6  2   8       OR d8
 fa  3   16      LD A,(a16)
 fb  1   4       EI
 fe  2   8       CP d8
+ff  1   16      RST 38H
