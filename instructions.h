@@ -228,6 +228,42 @@ struct SUB_Instruction<byte> : public ReferenceInstruction<byte> {
 };
 
 template <class T>
+struct ADC_Instruction : public ReferenceInstruction<T> {
+};
+
+template <>
+struct ADC_Instruction<byte> : public ReferenceInstruction<byte> {
+    void run() {
+        byte a = ref0->get();
+        byte n = ref1->get();
+        byte x = a + n + (cpu->flagC() ? 1 : 0);
+        ref0->set(x);
+        cpu->flagZ(x == 0);
+        cpu->flagN(0);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(x < a); // TODO: carry flag
+    }
+};
+
+template <class T>
+struct SBC_Instruction : public ReferenceInstruction<T> {
+};
+
+template <>
+struct SBC_Instruction<byte> : public ReferenceInstruction<byte> {
+    void run() {
+        byte a = ref0->get();
+        byte n = ref1->get();
+        byte x = a - (n + (cpu->flagC() ? 1 : 0));
+        ref0->set(x);
+        cpu->flagZ(x == 0);
+        cpu->flagN(1);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC(x <= a); // TODO: carry flag
+    }
+};
+
+template <class T>
 struct INC_Instruction : public ReferenceInstruction<T> {
 };
 
@@ -371,6 +407,18 @@ struct EI_Instruction : public Instruction {
     }
 };
 
+struct RRCA_Instruction : public Instruction {
+    void run() {
+        byte bit0 = cpu->a & 1;
+        cpu->a >>= 1;
+
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagH(0);
+        cpu->flagN(0);
+        cpu->flagC(bit0);
+    }
+};
+
 template <class T>
 struct SWAP_Instruction : public ReferenceInstruction<T> {
 };
@@ -411,6 +459,19 @@ struct BIT_Instruction<byte> : public ReferenceInstruction<byte> {
         cpu->flagZ((ref0->get() & (1 << arg)) == 0);
         cpu->flagN(0);
         cpu->flagH(1);
+    }
+};
+
+template <class T>
+struct SET_Instruction : public ReferenceInstruction<T> {
+};
+
+template <>
+struct SET_Instruction<byte> : public ReferenceInstruction<byte> {
+    void run() {
+        byte b = ref0->get();
+        b |= (1 << arg);
+        ref0->set(b);
     }
 };
 

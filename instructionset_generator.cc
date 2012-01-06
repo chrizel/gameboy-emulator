@@ -197,6 +197,7 @@ static void init()
     wordArguments["HL"]    = "new RegisterReference<word>(cpu->hl)";
     wordArguments["a16"]   = "new MemoryReference<word>(cpu, cpu->pc)";
     wordArguments["d16"]   = "new MemoryReference<word>(cpu, cpu->pc)";
+    wordArguments["[a16]"] = "new Memory_a16_Reference<word>(cpu, cpu->pc)";
 
     condArguments["NZ"]    = "new NZ_Condition()";
     condArguments["NC"]    = "new NC_Condition()";

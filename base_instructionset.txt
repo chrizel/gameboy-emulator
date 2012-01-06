@@ -5,21 +5,25 @@
 05  1   4       DEC B
 06  2   8       LD B,d8
 07  1   4       RLCA
+08  3   20      LD [a16],SP
 09  1   8       ADD HL,BC
 0a  1   8       LD A,(BC)
 0b  1   8       DEC BC
 0c  1   4       INC C
 0d  1   4       DEC C
 0e  2   8       LD C,d8
+0f  1   4       RRCA
 11  3   12      LD DE,d16
 12  1   8       LD (DE),A
 13  1   8       INC DE
+15  1   4       DEC D
 16  2   8       LD D,d8
 17  1   4       RLA
 18  2   12      JR r8
 19  1   8       ADD HL,DE
 1a  1   8       LD A,(DE)
 1c  1   4       INC E
+1d  1   4       DEC E
 1e  2   8       LD E,d8
 20  2   12/8    JR NZ,r8
 21  3   12      LD HL,d16
@@ -45,13 +49,17 @@
 3e  2   8       LD A,d8
 40  1   4       LD B,B
 41  1   4       LD B,C
+43  1   4       LD B,E
 46  1   8       LD B,(HL)
 47  1   4       LD B,A
+4b  1   4       LD C,E
+4c  1   4       LD C,H
 4e  1   8       LD C,(HL)
 4f  1   4       LD C,A
 54  1   4       LD D,H
 56  1   8       LD D,(HL)
 57  1   4       LD D,A
+5a  1   4       LD E,D
 5d  1   4       LD E,L
 5e  1   8       LD E,(HL)
 5f  1   4       LD E,A
@@ -61,9 +69,11 @@
 69  1   4       LD L,C
 6b  1   4       LD L,E
 6f  1   4       LD L,A
+70  1   8       LD (HL),B
 71  1   8       LD (HL),C
 72  1   8       LD (HL),D
 73  1   8       LD (HL),E
+74  1   8       LD (HL),H
 77  1   8       LD (HL),A
 78  1   4       LD A,B
 79  1   4       LD A,C
@@ -72,9 +82,13 @@
 7c  1   4       LD A,H
 7d  1   4       LD A,L
 7e  1   8       LD A,(HL)
+7f  1   4       LD A,A
+80  1   4       ADD A,B
 85  1   4       ADD A,L
 87  1   4       ADD A,A
+89  1   4       ADC A,C
 95  1   4       SUB L
+9b  1   4       SBC A,E
 a1  1   4       AND C
 a7  1   4       AND A
 a9  1   4       XOR C
@@ -82,6 +96,7 @@ af  1   4       XOR A
 b0  1   4       OR B
 b1  1   4       OR C
 b7  1   4       OR A
+be  1   8       CP (HL)
 c0  1   20/8    RET NZ
 c1  1   12      POP BC
 c2  3   16/12   JP NZ,a16
@@ -97,9 +112,12 @@ cf  1   16      RST 16H
 d0  1   20/8    RET NC
 d1  1   12      POP DE
 d5  1   16      PUSH DE
+d6  2   8       SUB d8
 d8  1   20/8    RET C
 d9  1   16      RETI
 dc  3   24/12   CALL C,a16
+de  2   8       SBC A,d8
+df  1   16      RST 18H
 e0  2   12      LD (a8),A
 e1  1   12      POP HL
 e2  1   8       LD (C),A
@@ -107,6 +125,7 @@ e5  1   16      PUSH HL
 e6  2   8       AND d8
 e9  1   4       JP HL
 ea  3   16      LD (a16),A
+ee  2   8       XOR d8
 ef  1   16      RST 28H
 f0  2   12      LD A,(a8)
 f1  1   12      POP AF
