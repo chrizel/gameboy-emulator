@@ -30,9 +30,25 @@ class MemoryReference : public Reference<T>
 private:
     CPU *cpu;
     word &r;
+public:
+    MemoryReference(CPU *cpu, word &r) : cpu(cpu), r(r) {};
+    virtual T get() {
+        return cpu->memory->get<T>(r);
+    };
+    virtual void set(T v) {
+        cpu->memory->set<T>(r, v);
+    };
+};
+
+template <class T>
+class Memory_HL_Reference : public Reference<T>
+{
+private:
+    CPU *cpu;
+    word &r;
     word add;
 public:
-    MemoryReference(CPU *cpu, word &r, word add=0) : cpu(cpu), r(r), add(add) {};
+    Memory_HL_Reference(CPU *cpu, word &r, word add) : cpu(cpu), r(r), add(add) {};
     virtual T get() {
         T v = cpu->memory->get<T>(r);
         r += add;

@@ -17,8 +17,8 @@ public:
     Memory(const char *file, Debugger *debugger);
     virtual ~Memory();
 
-    template <class T> void set(word address, T b) {};
-    template <class T> T get(word address) { return 0; };
+    template <class T> void set(word address, T b);
+    template <class T> T get(word address);
 
     byte & getRef(word address) { return rom[address.value()]; };
 };

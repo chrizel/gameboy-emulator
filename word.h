@@ -19,8 +19,8 @@ private:
     } d;
 
 public:
-    word(word_t v = 0) { d.w = v; };
-    word(byte lo, byte hi) { d.b.lo = lo; d.b.hi = hi; };
+    word(const word_t v = 0) { d.w = v; };
+    word(const byte &lo, const byte &hi) { d.b.lo = lo; d.b.hi = hi; };
 
     inline byte & loRef() { return d.b.lo; };
     inline byte & hiRef() { return d.b.hi; };
@@ -42,10 +42,7 @@ public:
     word operator++(int) { return word(d.w++); };
     word operator--(int) { return word(d.w--); };
 
-    void addSignedByte(const byte &b) {
-        d.w = d.w + (int8_t)b;
-    };
-
+    void addSignedByte(const byte &b) { d.w = d.w + (int8_t)b; };
 };
 
 std::ostream & operator<<(std::ostream &cout, byte b);

@@ -43,10 +43,10 @@ public:
     word &hl; byte &h; byte &l;
     byte &ly; byte &IE; byte &IF;
 
-    inline const byte flagZ() { return f & (1 << 7); };
-    inline const byte flagN() { return f & (1 << 6); };
-    inline const byte flagH() { return f & (1 << 5); };
-    inline const byte flagC() { return f & (1 << 4); };
+    inline const byte flagZ() const { return f & (1 << 7); };
+    inline const byte flagN() const { return f & (1 << 6); };
+    inline const byte flagH() const { return f & (1 << 5); };
+    inline const byte flagC() const { return f & (1 << 4); };
 
     inline void flagZ(byte v) { f = v ? (f | (1 << 7)) : (f & ~(1 << 7)); };
     inline void flagN(byte v) { f = v ? (f | (1 << 6)) : (f & ~(1 << 6)); };
@@ -62,13 +62,10 @@ public:
     void requestInterrupt(Interrupt irq);
 };
 
-struct Condition { 
-    virtual ~Condition() {};
-    virtual bool operator()(CPU *cpu) = 0; 
-};
-struct Z_Condition : Condition { virtual bool operator()(CPU *cpu) { return cpu->flagZ(); }; };
-struct C_Condition : Condition { virtual bool operator()(CPU *cpu) { return cpu->flagC(); }; };
-struct NZ_Condition : Condition { virtual bool operator()(CPU *cpu) { return !cpu->flagZ(); }; };
-struct NC_Condition : Condition { virtual bool operator()(CPU *cpu) { return !cpu->flagC(); }; };
+struct Condition { virtual bool operator()(CPU *cpu) const = 0; };
+struct Z_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagZ(); }; };
+struct C_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagC(); }; };
+struct NZ_Condition : Condition { virtual bool operator()(CPU *cpu) const { return !cpu->flagZ(); }; };
+struct NC_Condition : Condition { virtual bool operator()(CPU *cpu) const { return !cpu->flagC(); }; };
 
 #endif

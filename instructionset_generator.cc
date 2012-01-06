@@ -175,8 +175,8 @@ static void init()
     byteArguments["(C)"]   = "new Memory_SingleRegister_Reference<byte>(cpu, cpu->c)";
     byteArguments["(DE)"]  = "new MemoryReference<byte>(cpu, cpu->de)";
     byteArguments["(HL)"]  = "new MemoryReference<byte>(cpu, cpu->hl)";
-    byteArguments["(HL+)"] = "new MemoryReference<byte>(cpu, cpu->hl, 1)";
-    byteArguments["(HL-)"] = "new MemoryReference<byte>(cpu, cpu->hl, -1)";
+    byteArguments["(HL+)"] = "new Memory_HL_Reference<byte>(cpu, cpu->hl, 1)";
+    byteArguments["(HL-)"] = "new Memory_HL_Reference<byte>(cpu, cpu->hl, -1)";
     byteArguments["(a8)"]  = "new Memory_a8_Reference<byte>(cpu, cpu->pc)";
     byteArguments["(a16)"] = "new Memory_a16_Reference<byte>(cpu, cpu->pc)";
     byteArguments["A"]     = "new RegisterReference<byte>(cpu->a)";
