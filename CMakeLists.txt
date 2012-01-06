@@ -23,7 +23,7 @@ set(HEADERS
     word.h
 )
 
-source_group("Headers" FILES ${HEADERS})
+source_group("Header Files" FILES ${HEADERS})
 
 find_package(Boost 1.47.0 REQUIRED)
 find_package(OpenGL REQUIRED)
