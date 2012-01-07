@@ -32,6 +32,7 @@
 22  1   8       LD (HL+),A
 23  1   8       INC HL
 24  1   4       INC H
+25  1   4       DEC H
 26  2   8       LD H,d8
 28  2   12/8    JR Z,r8
 29  1   8       ADD HL,HL
@@ -39,6 +40,7 @@
 2b  1   8       DEC HL
 2c  1   4       INC L
 2d  1   4       DEC L
+2e  2   8       LD L,d8
 2f  1   4       CPL
 30  2   12/8    JR NC,r8
 31  3   12      LD SP,d16

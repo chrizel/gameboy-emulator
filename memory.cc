@@ -41,6 +41,10 @@ void Memory::dmaTransfer(byte b) {
 }
 
 template <> void Memory::set<byte>(word address, byte b) {
+    if (address < 0x8000) {
+        //TODO: rom bank switching
+        return;
+    }
     rom[address.value()] = b; 
     debugger->handleMemoryAccess(this, address, true);
 
