@@ -120,6 +120,10 @@ bool GameBoy::process()
         }
         memory->set<byte>(0xff00, b);
 
+        // increment DIV register
+        // TODO: timing? This register is incremented 16384 (~16779 on SGB) times a second.
+        memory->set<byte>(0xff04, memory->get<byte>(0xff04)+1);
+
         cpu->step();
     }
 
