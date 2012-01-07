@@ -196,6 +196,7 @@ struct ADD_Instruction<byte> : public ReferenceInstruction<byte> {
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(v < x); // TODO: carry flag
+        cpu->pc += length-1;
     }
 };
 
@@ -208,6 +209,28 @@ struct ADD_Instruction<word> : public ReferenceInstruction<word> {
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(v < x); // TODO: carry flag
+        cpu->pc += length-1;
+    }
+};
+
+template <class T>
+struct ADD_SP_Instruction : public ReferenceInstruction<T> {
+};
+
+template <>
+struct ADD_SP_Instruction<byte> : public ReferenceInstruction<byte> {
+    void run() {
+        word oldsp = cpu->sp;
+        byte b = ref0->get();
+        signed_byte sb = (signed_byte)b;
+
+        cpu->sp.addSignedByte(b);
+
+        cpu->flagZ(0);
+        cpu->flagN(0);
+        cpu->flagH(0); // TODO: half carry flag
+        cpu->flagC((sb > 0) ? (cpu->sp < oldsp) : (cpu->sp > oldsp)); // TODO: carry flag
+        cpu->pc += length-1;
     }
 };
 
@@ -224,6 +247,7 @@ struct SUB_Instruction<byte> : public ReferenceInstruction<byte> {
         cpu->flagN(1);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(cpu->a < b); // TODO: carry flag / "Set if no borrow"
+        cpu->pc += length-1;
     }
 };
 
@@ -242,6 +266,7 @@ struct ADC_Instruction<byte> : public ReferenceInstruction<byte> {
         cpu->flagN(0);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(x < a); // TODO: carry flag
+        cpu->pc += length-1;
     }
 };
 
@@ -260,6 +285,7 @@ struct SBC_Instruction<byte> : public ReferenceInstruction<byte> {
         cpu->flagN(1);
         cpu->flagH(0); // TODO: half carry flag
         cpu->flagC(x <= a); // TODO: carry flag
+        cpu->pc += length-1;
     }
 };
 

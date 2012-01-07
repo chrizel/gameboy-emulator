@@ -10,7 +10,9 @@
 60  2   8       BIT 4,B
 68  2   8       BIT 5,B
 6f  2   8       BIT 5,A
+70  2   8       BIT 6,B
 77  2   8       BIT 6,A
+78  2   8       BIT 7,B
 7e  2   16      BIT 7,(HL)
 7f  2   8       BIT 7,A
 86  2   16      RES 0,(HL)

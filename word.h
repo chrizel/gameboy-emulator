@@ -43,7 +43,7 @@ public:
     word operator++(int) { return word(d.w++); };
     word operator--(int) { return word(d.w--); };
 
-    void addSignedByte(const byte &b) { d.w = d.w + (int8_t)b; };
+    void addSignedByte(const byte &b) { d.w = d.w + (signed_byte)b; };
 };
 
 std::ostream & operator<<(std::ostream &cout, byte b);

@@ -88,6 +88,7 @@
 87  1   4       ADD A,A
 89  1   4       ADC A,C
 95  1   4       SUB L
+97  1   4       SUB A
 9b  1   4       SBC A,E
 a1  1   4       AND C
 a7  1   4       AND A
@@ -115,6 +116,7 @@ d5  1   16      PUSH DE
 d6  2   8       SUB d8
 d8  1   20/8    RET C
 d9  1   16      RETI
+da  3   16/12   JP C,a16
 dc  3   24/12   CALL C,a16
 de  2   8       SBC A,d8
 df  1   16      RST 18H
@@ -123,6 +125,7 @@ e1  1   12      POP HL
 e2  1   8       LD (C),A
 e5  1   16      PUSH HL
 e6  2   8       AND d8
+e8  2   16      ADD_SP r8
 e9  1   4       JP HL
 ea  3   16      LD (a16),A
 ee  2   8       XOR d8
