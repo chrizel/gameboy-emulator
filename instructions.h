@@ -8,6 +8,58 @@
 #include "memory.h"
 #include "debugger.h"
 
+struct flags {
+    bool z;
+    bool h;
+    bool c;
+};
+
+static byte addByte(const byte &a, const byte &b, flags &f)
+{
+    byte r = a + b;
+    f.z = r == 0;
+    f.h = (r ^ b ^ a) & 0x10;
+    f.c = r < a;
+    return r;
+}
+
+static byte subByte(const byte &a, const byte &b, flags &f)
+{
+    byte r = a - b;
+    f.z = r == 0;
+    f.h = (r ^ b ^ a) & 0x10;
+    f.c = r < a;
+    return r;
+}
+
+static word addSignedByte(const word &a, const byte &b, flags &f)
+{
+    signed_byte sb = (signed_byte)b;
+    word r = a + sb;
+    f.z = r == 0;
+    f.h = (r.value() ^ (word_t)b ^ a.value()) & 0x1000;
+    f.c = (sb > 0) ? (r < a) : (r > a);
+    return r;
+}
+
+static word addWord(const word &a, const word &b, flags &f)
+{
+    word r = a + b;
+    f.z = r == 0;
+    f.h = (r.value() ^ b.value() ^ a.value()) & 0x1000;
+    f.c = r < a;
+    return r;
+}
+
+static word subWord(const word &a, const word &b, flags &f)
+{
+    word r = a - b;
+    f.z = r == 0;
+    f.h = (r.value() ^ b.value() ^ a.value()) & 0x1000;
+    f.c = r < a;
+    return r;
+}
+
 struct Instruction
 {
     byte code;
