@@ -293,12 +293,12 @@ struct SUB_Instruction : public ReferenceInstruction<T> {
 template <>
 struct SUB_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        byte b = ref0->get();
-        cpu->a = cpu->a - b;
-        cpu->flagZ(cpu->a == 0);
+        flags f;
+        cpu->a = subByte(cpu->a, ref0->get(), f);
+        cpu->flagZ(f.z);
         cpu->flagN(1);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(cpu->a < b); // TODO: carry flag / "Set if no borrow"
+        cpu->flagH(f.h);
+        cpu->flagC(f.c);
         cpu->pc += length-1;
     }
 };
