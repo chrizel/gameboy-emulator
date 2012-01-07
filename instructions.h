@@ -247,13 +247,12 @@ struct ADD_Instruction : public ReferenceInstruction<T> {
 template <>
 struct ADD_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        byte x = ref0->get();
-        byte v = x + ref1->get();
-        ref0->set(v);
-        cpu->flagZ(v == 0);
+        flags f;
+        ref0->set(addByte(ref0->get(), ref1->get(), f));
+        cpu->flagZ(f.z);
         cpu->flagN(0);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(v < x); // TODO: carry flag
+        cpu->flagH(f.h);
+        cpu->flagC(f.c);
         cpu->pc += length-1;
     }
 };
