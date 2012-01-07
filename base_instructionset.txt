@@ -1,5 +1,6 @@
 00  1   4       NOP
 01  3   12      LD BC,d16
+02  1   8       LD (BC),A
 03  1   8       INC BC
 04  1   4       INC B
 05  1   4       DEC B
@@ -33,6 +34,7 @@
 24  1   4       INC H
 26  2   8       LD H,d8
 28  2   12/8    JR Z,r8
+29  1   8       ADD HL,HL
 2a  1   8       LD A,(HL+)
 2b  1   8       DEC HL
 2c  1   4       INC L
@@ -56,11 +58,19 @@
 43  1   4       LD B,E
 46  1   8       LD B,(HL)
 47  1   4       LD B,A
+48  1   4       LD C,B
+49  1   4       LD C,C
 4b  1   4       LD C,E
 4c  1   4       LD C,H
+4d  1   4       LD C,L
 4e  1   8       LD C,(HL)
 4f  1   4       LD C,A
+50  1   4       LD D,B
+51  1   4       LD D,C
+52  1   4       LD D,D
+53  1   4       LD D,E
 54  1   4       LD D,H
+55  1   4       LD D,L
 56  1   8       LD D,(HL)
 57  1   4       LD D,A
 5a  1   4       LD E,D
@@ -69,6 +79,7 @@
 5f  1   4       LD E,A
 60  1   4       LD H,B
 62  1   4       LD H,D
+66  1   8       LD H,(HL)
 67  1   4       LD H,A
 69  1   4       LD L,C
 6b  1   4       LD L,E
@@ -92,17 +103,29 @@
 85  1   4       ADD A,L
 87  1   4       ADD A,A
 89  1   4       ADC A,C
+8a  1   4       ADC A,D
+8e  1   8       ADC A,(HL)
+90  1   4       SUB B
 95  1   4       SUB L
 96  1   8       SUB (HL)
 97  1   4       SUB A
 9b  1   4       SBC A,E
+9e  1   8       SBC A,(HL)
 a1  1   4       AND C
 a7  1   4       AND A
 a9  1   4       XOR C
+ac  1   4       XOR H
 af  1   4       XOR A
 b0  1   4       OR B
 b1  1   4       OR C
+b2  1   4       OR D
+b3  1   4       OR E
+b4  1   4       OR H
+b5  1   4       OR L
+b6  1   4       OR (HL)
 b7  1   4       OR A
+b8  1   4       CP B
+b9  1   4       CP C
 be  1   8       CP (HL)
 c0  1   20/8    RET NZ
 c1  1   12      POP BC
@@ -110,6 +133,7 @@ c2  3   16/12   JP NZ,a16
 c3  3   16      JP a16
 c5  1   16      PUSH BC
 c6  2   8       ADD A,d8
+c7  1   16      RST 00H
 c8  1   20/8    RET Z
 c9  1   16      RET
 ca  3   16/12   JP Z,a16
@@ -141,6 +165,7 @@ f1  1   12      POP AF
 f3  1   4       DI
 f5  1   16      PUSH AF
 f6  2   8       OR d8
+f9  1   8       LD SP,HL
 fa  3   16      LD A,(a16)
 fb  1   4       EI
 fe  2   8       CP d8
