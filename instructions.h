@@ -260,12 +260,11 @@ struct ADD_Instruction<byte> : public ReferenceInstruction<byte> {
 template <>
 struct ADD_Instruction<word> : public ReferenceInstruction<word> {
     void run() {
-        word x = ref0->get();
-        word v = x + ref1->get();
-        ref0->set(v);
+        flags f;
+        ref0->set(addWord(ref0->get(), ref1->get(), f));
         cpu->flagN(0);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(v < x); // TODO: carry flag
+        cpu->flagH(f.h);
+        cpu->flagC(f.c);
         cpu->pc += length-1;
     }
 };
