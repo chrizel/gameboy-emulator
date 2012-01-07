@@ -22,6 +22,7 @@
 18  2   12      JR r8
 19  1   8       ADD HL,DE
 1a  1   8       LD A,(DE)
+1b  1   8       DEC DE
 1c  1   4       INC E
 1d  1   4       DEC E
 1e  2   8       LD E,d8
@@ -33,15 +34,18 @@
 26  2   8       LD H,d8
 28  2   12/8    JR Z,r8
 2a  1   8       LD A,(HL+)
+2b  1   8       DEC HL
 2c  1   4       INC L
 2d  1   4       DEC L
 2f  1   4       CPL
+30  2   12/8    JR NC,r8
 31  3   12      LD SP,d16
 32  1   8       LD (HL-),A
 34  1   12      INC (HL)
 35  1   12      DEC (HL)
 36  2   12      LD (HL),d8
 37  1   4       SCF
+38  2   12/8    JR C,r8
 39  1   8       ADD HL,SP
 3a  1   8       LD A,(HL-)
 3c  1   4       INC A
@@ -84,10 +88,12 @@
 7e  1   8       LD A,(HL)
 7f  1   4       LD A,A
 80  1   4       ADD A,B
+82  1   4       ADD A,D
 85  1   4       ADD A,L
 87  1   4       ADD A,A
 89  1   4       ADC A,C
 95  1   4       SUB L
+96  1   8       SUB (HL)
 97  1   4       SUB A
 9b  1   4       SBC A,E
 a1  1   4       AND C

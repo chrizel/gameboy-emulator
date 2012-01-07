@@ -3,6 +3,7 @@
 37  2   8       SWAP A
 3f  2   8       SRL A
 40  2   8       BIT 0,B
+41  2   8       BIT 0,C
 48  2   8       BIT 1,B
 50  2   8       BIT 2,B
 58  2   8       BIT 3,B
