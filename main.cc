@@ -1,8 +1,6 @@
 #include <iostream>
-
 #include <string>
-
-#include <stdlib.h>
+#include <cstdlib>
 
 #if defined(__APPLE__)
 #include <GLUT/glut.h>
@@ -15,9 +13,6 @@
 #endif
 
 #include "gameboy.h"
-#include "cpu.h"
-#include "word.h"
-#include "memory.h"
 #include "debugger.h"
 
 static GameBoy *gb = 0;
@@ -90,6 +85,8 @@ static void setKey(unsigned char key, bool down)
     case 'p': gb->setButton(BTN_B,      down); break;
     case 'u': gb->setButton(BTN_SELECT, down); break;
     case 'i': gb->setButton(BTN_START,  down); break;
+    case 'v': if (!down) { gb->getDebugger()->verboseCPU = !gb->getDebugger()->verboseCPU; } break;
+    case 'b': if (!down) { gb->getDebugger()->stepMode = true; } break;
     }
 }
 
