@@ -310,14 +310,12 @@ struct ADC_Instruction : public ReferenceInstruction<T> {
 template <>
 struct ADC_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        byte a = ref0->get();
-        byte n = ref1->get();
-        byte x = a + n + (cpu->flagC() ? 1 : 0);
-        ref0->set(x);
-        cpu->flagZ(x == 0);
+        flags f;
+        ref0->set(addByte(ref0->get(), ref1->get() + (cpu->flagC() ? 1 : 0), f)); //TODO
+        cpu->flagZ(f.z);
         cpu->flagN(0);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(x < a); // TODO: carry flag
+        cpu->flagH(f.h);
+        cpu->flagC(f.c);
         cpu->pc += length-1;
     }
 };
