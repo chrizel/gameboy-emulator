@@ -81,11 +81,13 @@
 5e  1   8       LD E,(HL)
 5f  1   4       LD E,A
 60  1   4       LD H,B
+61  1   4       LD H,C
 62  1   4       LD H,D
 66  1   8       LD H,(HL)
 67  1   4       LD H,A
 69  1   4       LD L,C
 6b  1   4       LD L,E
+6e  1   8       LD L,(HL)
 6f  1   4       LD L,A
 70  1   8       LD (HL),B
 71  1   8       LD (HL),C
@@ -110,6 +112,7 @@
 8a  1   4       ADC A,D
 8e  1   8       ADC A,(HL)
 90  1   4       SUB B
+94  1   4       SUB H
 95  1   4       SUB L
 96  1   8       SUB (HL)
 97  1   4       SUB A
