@@ -276,16 +276,12 @@ struct ADD_SP_Instruction : public ReferenceInstruction<T> {
 template <>
 struct ADD_SP_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        word oldsp = cpu->sp;
-        byte b = ref0->get();
-        signed_byte sb = (signed_byte)b;
-
-        cpu->sp.addSignedByte(b);
-
+        flags f;
+        cpu->sp = addSignedByte(cpu->sp, ref0->get(), f);
         cpu->flagZ(0);
         cpu->flagN(0);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC((sb > 0) ? (cpu->sp < oldsp) : (cpu->sp > oldsp)); // TODO: carry flag
+        cpu->flagH(f.h);
+        cpu->flagC(f.c);
         cpu->pc += length-1;
     }
 };
