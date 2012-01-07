@@ -168,7 +168,46 @@ struct RLA_Instruction : public Instruction {
 
 struct DAA_Instruction : public Instruction {
     void run() {
-        //TODO
+        byte add  = 0;
+        bool newc = false;
+
+        byte op = cpu->flagN() ? 1 : 0;
+        byte c  = cpu->flagC() ? 1 : 0;
+        byte hi = (cpu->a & 0xf0) >> 4;
+        byte h  = cpu->flagH() ? 1 : 0;
+        byte lo = cpu->a & 0x0f;
+
+#define DAA_COND(_op, _c, _hi0, _hi1, _h, _lo0, _lo1, _add, _newc) \
+        if (op == _op && c == _c && in_range(hi, _hi0, _hi1) && h == _h && in_range(lo, _lo0, _lo1)) \
+            { add = _add; newc = _newc; break; }
+
+        while (true) {
+            // Table according to Z80 CPU User’s Manual page 166
+            //        op | c  | hi-from | hi-to | h  | lo-from | lo-to | add   | c-out
+            DAA_COND( 0,   0,   0x0,      0x9,    0,   0x0,      0x9,    0x00,   0 )
+            DAA_COND( 0,   0,   0x0,      0x8,    0,   0xa,      0xf,    0x06,   0 )
+            DAA_COND( 0,   0,   0x0,      0x9,    1,   0x0,      0x3,    0x06,   0 )
+            DAA_COND( 0,   0,   0xa,      0xf,    0,   0x0,      0x9,    0x60,   1 )
+            DAA_COND( 0,   0,   0x9,      0xf,    0,   0xa,      0xf,    0x66,   1 )
+            DAA_COND( 0,   0,   0xa,      0xf,    1,   0x0,      0x3,    0x66,   1 )
+            DAA_COND( 0,   1,   0x0,      0x2,    0,   0x0,      0x9,    0x60,   1 )
+            DAA_COND( 0,   1,   0x0,      0x2,    0,   0xa,      0xf,    0x66,   1 )
+            DAA_COND( 0,   1,   0x0,      0x3,    1,   0x0,      0x3,    0x66,   1 )
+            DAA_COND( 1,   0,   0x0,      0x9,    0,   0x0,      0x9,    0x00,   0 )
+            DAA_COND( 1,   0,   0x0,      0x8,    1,   0x6,      0xf,    0xfa,   0 )
+            DAA_COND( 1,   1,   0x7,      0xf,    0,   0x0,      0x9,    0xa0,   1 )
+            DAA_COND( 1,   1,   0x6,      0x7,    1,   0x6,      0xf,    0x9a,   1 )
+            break;
+        }
+
+        cpu->a += add;
+        cpu->flagZ(cpu->a == 0);
+        cpu->flagH(0);
+        cpu->flagC(newc);
+    }
+
+    inline bool in_range(const byte &a, const byte &from, const byte &to) {
+        return a >= from && a <= to;
     }
 };
 
