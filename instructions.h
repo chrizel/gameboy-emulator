@@ -348,7 +348,7 @@ struct INC_Instruction<byte> : public ReferenceInstruction<byte> {
         ref0->set(v);
         cpu->flagZ(v == 0);
         cpu->flagN(0);
-        cpu->flagH(0); // TOOD: half carry flag
+        cpu->flagH(0); // TODO: half carry flag
     }
 };
 
@@ -370,7 +370,7 @@ struct DEC_Instruction<byte> : public ReferenceInstruction<byte> {
         ref0->set(v);
         cpu->flagZ(v == 0);
         cpu->flagN(1);
-        cpu->flagH(0); // TOOD: half carry flag
+        cpu->flagH(0); // TODO: half carry flag
     }
 };
 
@@ -388,12 +388,13 @@ struct CP_Instruction : public ReferenceInstruction<T> {
 template <>
 struct CP_Instruction<byte> : public ReferenceInstruction<byte> {
     void run() {
-        byte a = cpu->a;
+        flags f;
         byte n = ref0->get();
-        cpu->flagZ(a == n);
+        subByte(cpu->a, n, f);
+        cpu->flagZ(cpu->a == n);
         cpu->flagN(1);
-        cpu->flagH(0); // TODO: half carry flag
-        cpu->flagC(a < n); // TODO: carry flag
+        cpu->flagH(f.h);
+        cpu->flagC(cpu->a < n);
         cpu->pc += length-1;
     }
 };
