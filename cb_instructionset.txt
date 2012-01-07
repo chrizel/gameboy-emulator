@@ -4,6 +4,7 @@
 3f  2   8       SRL A
 40  2   8       BIT 0,B
 41  2   8       BIT 0,C
+47  2   8       BIT 0,A
 48  2   8       BIT 1,B
 50  2   8       BIT 2,B
 57  2   8       BIT 2,A
@@ -21,6 +22,8 @@
 7f  2   8       BIT 7,A
 86  2   16      RES 0,(HL)
 87  2   8       RES 0,A
+9e  2   16      RES 3,(HL)
 be  2   16      RES 7,(HL)
 bf  2   8       RES 7,A
+de  2   16      SET 3,(HL)
 fe  2   16      SET 7,(HL)

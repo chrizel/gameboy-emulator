@@ -114,6 +114,12 @@ struct RLA_Instruction : public Instruction {
     }
 };
 
+struct DAA_Instruction : public Instruction {
+    void run() {
+        //TODO
+    }
+};
+
 template <class T>
 struct OR_Instruction : public ReferenceInstruction<T> {
 };

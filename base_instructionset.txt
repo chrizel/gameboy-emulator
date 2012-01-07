@@ -34,6 +34,7 @@
 24  1   4       INC H
 25  1   4       DEC H
 26  2   8       LD H,d8
+#27  1   4       DAA
 28  2   12/8    JR Z,r8
 29  1   8       ADD HL,HL
 2a  1   8       LD A,(HL+)
@@ -103,6 +104,7 @@
 80  1   4       ADD A,B
 82  1   4       ADD A,D
 85  1   4       ADD A,L
+86  1   8       ADD A,(HL)
 87  1   4       ADD A,A
 89  1   4       ADC A,C
 8a  1   4       ADC A,D
