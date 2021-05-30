@@ -62,7 +62,7 @@ public:
     void requestInterrupt(Interrupt irq);
 };
 
-struct Condition { virtual bool operator()(CPU *cpu) const = 0; };
+struct Condition { virtual bool operator()(CPU *cpu) const = 0; virtual ~Condition() {}; };
 struct Z_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagZ() != 0; }; };
 struct C_Condition : Condition { virtual bool operator()(CPU *cpu) const { return cpu->flagC() != 0; }; };
 struct NZ_Condition : Condition { virtual bool operator()(CPU *cpu) const { return !cpu->flagZ(); }; };
